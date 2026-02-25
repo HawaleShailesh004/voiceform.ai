@@ -1,0 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ─────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: #F4F1EB;
+  color: #0E1628;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ── Scrollbar ─────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #4A6080; border-radius: 3px; }
+
+/* ── Selection ─────────────────────────────────── */
+::selection { background: rgba(201,137,58,0.2); color: #0E1628; }
+
+/* ── Layer components ──────────────────────────── */
+@layer components {
+
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-6 py-3 bg-amber text-white font-body font-medium
+           rounded text-sm tracking-wide transition-all duration-200
+           hover:bg-amber-light active:scale-95 shadow-lift;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-6 py-3 bg-transparent text-navy font-body font-medium
+           rounded text-sm tracking-wide border border-steel transition-all duration-200
+           hover:bg-navy hover:text-white hover:border-navy active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-4 py-2 text-steel font-body text-sm
+           rounded transition-all duration-200 hover:text-navy hover:bg-navy/5;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-lg border border-steel/20 shadow-lift;
+  }
+
+  .card-navy {
+    @apply bg-navy rounded-lg border border-slate/40;
+  }
+
+  /* Inputs */
+  .input-base {
+    @apply w-full px-4 py-3 bg-white border border-steel/30 rounded text-ink text-sm
+           font-body placeholder:text-mist transition-all duration-200
+           focus:outline-none focus:border-amber focus:shadow-glow;
+  }
+
+  /* Section labels */
+  .label-caps {
+    @apply text-xs font-body font-medium tracking-widest uppercase text-mist;
+  }
+
+  /* Status badges */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-body font-medium;
+  }
+
+  .badge-active   { @apply badge bg-success/10 text-success; }
+  .badge-done     { @apply badge bg-amber/10 text-amber-dim; }
+  .badge-pending  { @apply badge bg-mist/20 text-steel; }
+
+  /* Shimmer loading */
+  .shimmer {
+    background: linear-gradient(90deg, #e8e4db 25%, #f0ece3 50%, #e8e4db 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.8s ease-in-out infinite;
+  }
+
+  /* Typing indicator dots */
+  .typing-dot {
+    @apply w-2 h-2 rounded-full bg-mist;
+    animation: dotBounce 1.2s ease-in-out infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+}
+
+/* ── Utilities ─────────────────────────────────── */
+@layer utilities {
+
+  .text-balance { text-wrap: balance; }
+
+  .animate-delay-100 { animation-delay: 0.1s; }
+  .animate-delay-200 { animation-delay: 0.2s; }
+  .animate-delay-300 { animation-delay: 0.3s; }
+  .animate-delay-400 { animation-delay: 0.4s; }
+  .animate-delay-500 { animation-delay: 0.5s; }
+
+  /* Stagger children — keyframes here so hero/stagger content becomes visible */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .stagger > * { opacity: 0; animation: fadeUp 0.5s ease forwards; }
+  .stagger > *:nth-child(1) { animation-delay: 0.05s; }
+  .stagger > *:nth-child(2) { animation-delay: 0.12s; }
+  .stagger > *:nth-child(3) { animation-delay: 0.19s; }
+  .stagger > *:nth-child(4) { animation-delay: 0.26s; }
+  .stagger > *:nth-child(5) { animation-delay: 0.33s; }
+  .stagger > *:nth-child(6) { animation-delay: 0.40s; }
+
+  /* Paper background */
+  .bg-paper-texture {
+    background-color: #F4F1EB;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  }
+
+  /* Navy dot pattern */
+  .bg-dots {
+    background-image: radial-gradient(circle, #2C3F5E 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+}
