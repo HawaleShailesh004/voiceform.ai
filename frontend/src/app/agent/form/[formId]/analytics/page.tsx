@@ -1,20 +1,23 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, BarChart3 } from 'lucide-react'
-import AgentNav from '@/components/shared/AgentNav'
-import FormAnalyticsDashboard from '@/components/analytics/FormanalyticalDashboard'
-import { formAPI } from '@/lib/api'
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, BarChart3 } from "lucide-react";
+import AgentNav from "@/components/shared/AgentNav";
+import { FormAnalyticsDashboard } from "@/components/analytics";
+import { formAPI } from "@/lib/api";
 
 export default function FormAnalyticsPage() {
-  const { formId } = useParams() as { formId: string }
-  const router = useRouter()
-  const [formTitle, setFormTitle] = useState('')
+  const { formId } = useParams() as { formId: string };
+  const router = useRouter();
+  const [formTitle, setFormTitle] = useState("");
 
   useEffect(() => {
-    formAPI.get(formId).then((f) => setFormTitle(f?.form_title ?? '')).catch(() => {})
-  }, [formId])
+    formAPI
+      .get(formId)
+      .then((f) => setFormTitle(f?.form_title ?? ""))
+      .catch(() => {});
+  }, [formId]);
 
   return (
     <div className="min-h-screen bg-woven grain">
@@ -30,7 +33,7 @@ export default function FormAnalyticsPage() {
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <BarChart3 size={18} className="text-teal flex-shrink-0" />
             <span className="font-display text-lg text-teal truncate">
-              {formTitle || 'Form'} · Detailed insights
+              {formTitle || "Form"} · Detailed insights
             </span>
           </div>
           <button
@@ -46,5 +49,5 @@ export default function FormAnalyticsPage() {
         <FormAnalyticsDashboard formId={formId} />
       </main>
     </div>
-  )
+  );
 }

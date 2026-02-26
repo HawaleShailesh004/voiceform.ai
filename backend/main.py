@@ -17,7 +17,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
@@ -169,6 +169,8 @@ async def upload_form(file: UploadFile = File(...)):
         fields_list.append(fd)
 
     sample_values = getattr(result, "sample_values", None) or {}
+    from health_score import compute_health_score
+    health = compute_health_score(fields_list)
     form_data = {
         "form_id":           form_id,
         "form_title":        result.form_title,
@@ -182,6 +184,7 @@ async def upload_form(file: UploadFile = File(...)):
         "warnings":          result.warnings,
         "raw_image_b64":     result.raw_image_b64,
         "sample_values":     sample_values,
+        "health_score":      health,
     }
 
     store.save_form(form_id, form_data)
@@ -198,6 +201,7 @@ async def upload_form(file: UploadFile = File(...)):
         "preview_image": f"data:image/png;base64,{result.raw_image_b64}" if result.raw_image_b64 else None,
         "chat_link":     f"{base_url}/chat/{form_id}",
         "whatsapp_link": f"https://wa.me/?text={form_id}",
+        "health_score":  health,
     })
 
 
@@ -284,6 +288,22 @@ async def update_form(form_id: str, body: FormUpdate):
     return JSONResponse({"status": "saved", "field_count": len(body.fields)})
 
 
+@app.get("/api/forms/{form_id}/health")
+async def get_form_health(form_id: str):
+    """
+    Return the health score for a form.
+    Re-computes if not stored (backwards compat with old forms).
+    """
+    form = _require_form(form_id)
+    stored = form.get("health_score")
+    if stored:
+        return JSONResponse(stored)
+    from health_score import compute_health_score
+    health = compute_health_score(form.get("fields", []))
+    store.update_form_health_score(form_id, health)
+    return JSONResponse(health)
+
+
 @app.get("/api/agent/forms")
 async def list_forms():
     forms = store.list_forms()
@@ -301,6 +321,7 @@ async def list_forms():
             "field_count":       len(form.get("fields", [])),
             "session_count":     len(sessions),
             "completed_count":   completed,
+            "health_score":      form.get("health_score"),
         })
     return JSONResponse({"forms": out})
 
@@ -608,7 +629,11 @@ async def chat(msg: ChatMessage):
 # ─────────────────────────────────────────────
 
 @app.post("/api/sessions/{session_id}/fill")
-async def fill_form(session_id: str):
+async def fill_form(session_id: str, partial: bool = Query(False)):
+    """
+    Generate filled PDF.
+    partial=true → highlight unfilled required fields yellow instead of leaving blank.
+    """
     session = _require_session(session_id)
     form    = _require_form(session["form_id"])
 
@@ -618,21 +643,112 @@ async def fill_form(session_id: str):
             form_schema=form,
             collected_data=session["collected"],
             session_id=session_id,
+            partial=partial,
         )
     except Exception as e:
         logger.error(f"Fillback failed: {e}", exc_info=True)
         raise HTTPException(500, f"Fill-back failed: {e}")
 
-    session["status"]          = "completed"
-    session["filled_pdf_path"] = output
-    store.save_session(session_id, session)
+    if not partial:
+        session["status"]          = "completed"
+        session["filled_pdf_path"] = output
+        store.save_session(session_id, session)
 
     original_name = form.get("original_filename", "form.pdf")
+    suffix = "partial_" if partial else "filled_"
     return FileResponse(
         output,
         media_type="application/pdf",
-        filename=f"vaarta_filled_{original_name}",
+        filename=f"vaarta_{suffix}{original_name}",
     )
+
+
+# ─────────────────────────────────────────────
+# Session file attachments (upload during chat, serve for agent)
+# ─────────────────────────────────────────────
+
+@app.post("/api/sessions/{session_id}/upload-file")
+async def upload_session_file(
+    session_id: str,
+    field_name: str = Query(..., description="Form field name for this upload"),
+    file: UploadFile = File(...),
+):
+    """
+    Upload a file (image/PDF) for a specific field during the chat.
+    No OCR or vision — files are stored as-is for privacy (e.g. PAN, Aadhaar, signature).
+    """
+    session = _require_session(session_id)
+    form    = _require_form(session["form_id"])
+
+    allowed = {".pdf", ".png", ".jpg", ".jpeg", ".webp"}
+    suffix  = Path(file.filename or "upload.png").suffix.lower()
+    if suffix not in allowed:
+        raise HTTPException(400, f"Unsupported file type '{suffix}'")
+
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(413, "File too large. Maximum 10 MB.")
+
+    store.save_session_file(session_id, field_name, content, suffix)
+
+    # Mark field as filled with a placeholder; no vision/OCR on personal docs
+    session.setdefault("collected", {})[field_name] = "FILE_UPLOADED"
+    if "uploaded_files" not in session:
+        session["uploaded_files"] = {}
+    session["uploaded_files"][field_name] = {
+        "filename": file.filename,
+        "suffix":   suffix,
+        "size_kb":  round(len(content) / 1024, 1),
+    }
+    filled, total = _progress(session, form)
+    session["progress_pct"] = round(filled / total * 100) if total else 0
+    store.save_session(session_id, session)
+
+    return JSONResponse({
+        "field_name":      field_name,
+        "extracted_value": None,
+        "filename":        file.filename,
+        "size_kb":         round(len(content) / 1024, 1),
+        "file_url":        f"/api/sessions/{session_id}/files/{field_name}",
+        "progress":        session.get("progress_pct", 0),
+        "collected":       session.get("collected", {}),
+    })
+
+
+@app.get("/api/sessions/{session_id}/files/{field_name}")
+async def get_session_file(session_id: str, field_name: str):
+    """Serve an uploaded file attachment for agent preview."""
+    _require_session(session_id)
+    data_dir   = Path(os.environ.get("VAARTA_DATA_DIR", "data"))
+    session_dir = data_dir / "session_files" / session_id
+    mime_map = {
+        ".pdf":  "application/pdf",
+        ".png":  "image/png",
+        ".jpg":  "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+    }
+    for suffix in (".pdf", ".png", ".jpg", ".jpeg", ".webp"):
+        p = session_dir / f"{field_name}{suffix}"
+        if p.exists():
+            mime = mime_map.get(suffix, "application/octet-stream")
+            return FileResponse(str(p), media_type=mime, filename=f"{field_name}{suffix}")
+    raise HTTPException(404, "File not found")
+
+
+@app.get("/api/sessions/{session_id}/files")
+async def list_session_files(session_id: str):
+    """Return metadata for all files uploaded in a session."""
+    _require_session(session_id)
+    files = store.list_session_files(session_id)
+    # Add file_url for each so the frontend can link to get_session_file
+    out = []
+    for f in files:
+        out.append({
+            **f,
+            "file_url": f"/api/sessions/{session_id}/files/{f['field_name']}",
+        })
+    return JSONResponse({"files": out})
 
 
 # ─────────────────────────────────────────────

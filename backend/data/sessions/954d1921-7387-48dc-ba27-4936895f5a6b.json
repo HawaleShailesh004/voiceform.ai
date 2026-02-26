@@ -1,0 +1,137 @@
+{
+  "session_id": "954d1921-7387-48dc-ba27-4936895f5a6b",
+  "form_id": "12a47bbf-3239-4aef-860c-bbacad9711ce",
+  "created_at": "2026-02-26T12:17:23.659627",
+  "status": "completed",
+  "collected": {
+    "name": "Shailesh Hawale",
+    "address": "shree nagar, warli pada, wagle estate, thane 4",
+    "mobile_number": "9893839989",
+    "email_address": "shailesh@gmail.com",
+    "next_of_kin_name": "Piyush",
+    "relationship": "brother",
+    "next_of_kin_email_address": "piyush@gmail.com",
+    "next_of_kin_mobile_number": "3837983878",
+    "bank_building_society": "BOM",
+    "branch": "shree nagr",
+    "sort_code": "383889",
+    "account_number": "38739837890",
+    "driving_licence_checkbox": true,
+    "passport_birth_certificate_work_permit_checkbox": true
+  },
+  "chat_history": [
+    {
+      "role": "assistant",
+      "content": "Hey there! It's great to have you here, and I'm all set to make this process as quick and easy as possible for you. Let's kick things off with the basics—what's your name?"
+    },
+    {
+      "role": "user",
+      "content": "great"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for that! When you're ready, just let me know your full name so we can get started."
+    },
+    {
+      "role": "user",
+      "content": "my name is Shailesh hawale"
+    },
+    {
+      "role": "assistant",
+      "content": "Nice to meet you, Shailesh! Now, let's move on to your address. Could you share your full home address with me?"
+    },
+    {
+      "role": "user",
+      "content": "shree nagar, warli pada, wagle estate ,thane 4"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks, Shailesh! Now, could you please share your mobile number? It should be a 10-digit Indian mobile number."
+    },
+    {
+      "role": "user",
+      "content": "9893839989"
+    },
+    {
+      "role": "assistant",
+      "content": "Got it! Now, could you please provide your email address for correspondence?"
+    },
+    {
+      "role": "user",
+      "content": "shailesh@gmail.com"
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect, thanks for sharing your email address! Now, let's move on to your next of kin. Could you tell me their full name and mobile number?"
+    },
+    {
+      "role": "user",
+      "content": "its name is piyush who is my brother, his mobile no is 3874984777 & email is piyush@gmail.com"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks, Shailesh! I've noted your next of kin's name as Piyush and your relationship with him as your brother. I also have his email as piyush@gmail.com. However, the mobile number seems to be missing a digit, as Indian mobile numbers should be 10 digits. Could you please double-check and provide the correct number?"
+    },
+    {
+      "role": "user",
+      "content": "3837983878"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for confirming the correct mobile number for your brother, Piyush. Let's move on to your banking details next. Could you tell me the name of your bank or building society?"
+    },
+    {
+      "role": "user",
+      "content": "ganesh apt"
+    },
+    {
+      "role": "assistant",
+      "content": "It seems like there might be a mix-up. Could you clarify if 'Ganesh Apt' is the name of your bank or perhaps your address? If it's your bank, please confirm; otherwise, let me know the correct bank name."
+    },
+    {
+      "role": "user",
+      "content": "name of bank is bom"
+    },
+    {
+      "role": "assistant",
+      "content": "Got it! Your bank is Bank of Maharashtra (BOM). Now, could you please tell me the branch name or location of your bank?"
+    },
+    {
+      "role": "user",
+      "content": "shree nagr"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks, Shailesh! I've noted your bank branch as Shree Nagar. Next, could you provide the sort code for your bank? It's a 6-digit number that you can find on your cheque book or bank statement."
+    },
+    {
+      "role": "user",
+      "content": "383889"
+    },
+    {
+      "role": "assistant",
+      "content": "Great, thanks for providing the sort code! If you have your account number handy, feel free to share it. It’s optional, so no worries if you'd prefer to skip it."
+    },
+    {
+      "role": "user",
+      "content": "38739837890"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for sharing your account number! Now, we'll quickly go through a few checkboxes related to identification documents. Are you submitting a driving licence, passport, birth certificate, or work permit? You can simply let me know which ones apply, if any."
+    },
+    {
+      "role": "user",
+      "content": "yes i have submitted"
+    },
+    {
+      "role": "assistant",
+      "content": "Great, thanks for letting me know! I've marked those as submitted. We've covered everything needed for now. If there's anything else you need, feel free to ask."
+    }
+  ],
+  "progress": 93,
+  "lang": "en",
+  "last_asked_field": "sort_code",
+  "updated_at": "2026-02-26T13:55:53.203169",
+  "filled_pdf_path": "data\\filled\\954d1921-7387-48dc-ba27-4936895f5a6b.pdf"
+}

@@ -1,11 +1,6 @@
 """
-Vaarta Persistence Layer
-JSON-file backed store. Survives server restarts. Zero dependencies.
-Structure on disk:
-  data/
-    forms/   {form_id}.json    — form schema + fields + preview
-    originals/{form_id}.pdf    — original uploaded file for AcroForm fill-back
-    sessions/{session_id}.json — chat session state
+Vaarta Persistence Layer v2
+Added: session file attachments (uploaded docs/images in chat)
 """
 
 import json
@@ -17,13 +12,14 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-DATA_DIR = Path(os.environ.get("VAARTA_DATA_DIR", "data"))
+DATA_DIR      = Path(os.environ.get("VAARTA_DATA_DIR", "data"))
 FORMS_DIR     = DATA_DIR / "forms"
 ORIGINALS_DIR = DATA_DIR / "originals"
 SESSIONS_DIR  = DATA_DIR / "sessions"
 FILLED_DIR    = DATA_DIR / "filled"
+FILES_DIR     = DATA_DIR / "session_files"   # ← new: uploaded attachments
 
-for d in (FORMS_DIR, ORIGINALS_DIR, SESSIONS_DIR, FILLED_DIR):
+for d in (FORMS_DIR, ORIGINALS_DIR, SESSIONS_DIR, FILLED_DIR, FILES_DIR):
     d.mkdir(parents=True, exist_ok=True)
 
 _lock = threading.Lock()
@@ -50,7 +46,6 @@ def _write(path: Path, data: dict) -> None:
 # ── Forms ──────────────────────────────────────────────────────────────
 
 def save_form(form_id: str, data: dict) -> None:
-    """Save form schema (fields, title, preview, metadata). Omits raw preview for speed."""
     _write(FORMS_DIR / f"{form_id}.json", data)
 
 
@@ -68,7 +63,6 @@ def list_forms() -> list[dict]:
 
 
 def update_form_fields(form_id: str, fields: list, title: str) -> bool:
-    """Update just the fields list and title — called by the field editor."""
     data = load_form(form_id)
     if not data:
         return False
@@ -79,7 +73,6 @@ def update_form_fields(form_id: str, fields: list, title: str) -> bool:
 
 
 def update_form_sample_values(form_id: str, sample_values: dict) -> bool:
-    """Save generated sample values for live preview (from GPT or vision)."""
     data = load_form(form_id)
     if not data:
         return False
@@ -88,7 +81,16 @@ def update_form_sample_values(form_id: str, sample_values: dict) -> bool:
     return True
 
 
-# ── Original files (for AcroForm fill-back) ────────────────────────────
+def update_form_health_score(form_id: str, health: dict) -> bool:
+    data = load_form(form_id)
+    if not data:
+        return False
+    data["health_score"] = health
+    save_form(form_id, data)
+    return True
+
+
+# ── Original files ─────────────────────────────────────────────────────
 
 def save_original(form_id: str, file_bytes: bytes, suffix: str) -> str:
     path = ORIGINALS_DIR / f"{form_id}{suffix}"
@@ -129,3 +131,55 @@ def list_sessions_for_form(form_id: str) -> list[dict]:
 
 def filled_path(session_id: str) -> Path:
     return FILLED_DIR / f"{session_id}.pdf"
+
+
+# ── Session file attachments ───────────────────────────────────────────
+
+def save_session_file(session_id: str, field_name: str, file_bytes: bytes, suffix: str) -> str:
+    """
+    Save a file uploaded by a user during chat (e.g. Aadhaar image, signature).
+    Returns the storage path.
+    One file per field per session — overwrites if re-uploaded.
+    """
+    session_dir = FILES_DIR / session_id
+    session_dir.mkdir(parents=True, exist_ok=True)
+    path = session_dir / f"{field_name}{suffix}"
+    with _lock:
+        with open(path, "wb") as f:
+            f.write(file_bytes)
+    return str(path)
+
+
+def get_session_file(field_name: str, session_id: str) -> Optional[bytes]:
+    """Return raw bytes of a previously uploaded session file, or None."""
+    session_dir = FILES_DIR / session_id
+    if not session_dir.exists():
+        return None
+    for suffix in (".pdf", ".png", ".jpg", ".jpeg", ".webp"):
+        p = session_dir / f"{field_name}{suffix}"
+        if p.exists():
+            try:
+                return p.read_bytes()
+            except Exception:
+                return None
+    return None
+
+
+def list_session_files(session_id: str) -> list[dict]:
+    """
+    Return metadata about all files uploaded in a session.
+    Used by the agent dashboard to show attachments.
+    """
+    session_dir = FILES_DIR / session_id
+    if not session_dir.exists():
+        return []
+    files = []
+    for p in session_dir.iterdir():
+        if p.is_file():
+            files.append({
+                "field_name": p.stem,
+                "filename":   p.name,
+                "size_kb":    round(p.stat().st_size / 1024, 1),
+                "path":       str(p),
+            })
+    return files

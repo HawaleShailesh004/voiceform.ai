@@ -54,6 +54,22 @@ function FormCard({ form, delay }: { form: AgentForm; delay: number }) {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {form.health_score && (
+                <span
+                  className={clsx(
+                    "text-[10px] font-mono px-1.5 py-0.5 rounded font-bold",
+                    form.health_score.grade === "A"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : form.health_score.grade === "B"
+                        ? "bg-teal-100 text-teal-700"
+                        : form.health_score.grade === "C"
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-red-100 text-red-700",
+                  )}
+                >
+                  {form.health_score.grade}
+                </span>
+              )}
               <span className="badge badge-muted">{sourceLabel[form.source_type] || form.source_type}</span>
               <ChevronRight size={14} className="text-ink-faint group-hover:text-teal group-hover:translate-x-0.5 transition-all duration-150" />
             </div>

@@ -2,19 +2,13 @@
 
 /**
  * FormAnalyticsDashboard
- * Drop into /agent/form/[formId]/page.tsx
- * Shows: completion funnel, field-level drop-off, language split, avg time
- *
- * Usage:
- *   import FormAnalyticsDashboard from '@/components/analytics/FormAnalyticsDashboard'
- *   <FormAnalyticsDashboard formId={formId} />
+ * Used on /agent/form/[formId]/analytics page.
+ * Shows: completion funnel, field-level drop-off, language split, avg time.
  */
 
 import { useEffect, useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
-import { formAPI, FormAnalytics, FieldAnalytic } from '@/lib/api'
-
-// ── tiny helpers ────────────────────────────────────────────────────────────
+import { formAPI, type FormAnalytics, type FieldAnalytic } from '@/lib/api'
 
 function avg(n: number | null): string {
   if (n === null) return '—'
@@ -32,8 +26,6 @@ const LANG_LABELS: Record<string, string> = {
   gu: '🌟 Gujarati',
 }
 
-// ── sub-components ───────────────────────────────────────────────────────────
-
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <div className="bg-white border border-sand rounded-xl p-4 flex flex-col gap-1">
@@ -45,7 +37,6 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
 }
 
 function FunnelBar({ label, pct, count, total }: { label: string; pct: number; count: number; total: number }) {
-  // Color: green → yellow → red based on drop-off
   const color = pct >= 70 ? '#16a34a' : pct >= 40 ? '#d97706' : '#dc2626'
   return (
     <div className="flex items-center gap-3 py-1">
@@ -65,7 +56,6 @@ function FunnelBar({ label, pct, count, total }: { label: string; pct: number; c
 
 function DropOffTable({ fields }: { fields: FieldAnalytic[] }) {
   const sorted = [...fields].sort((a, b) => b.drop_off_pct - a.drop_off_pct)
-
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -149,14 +139,12 @@ function CollapsibleSection({
   )
 }
 
-// ── main component ───────────────────────────────────────────────────────────
-
-export default function FormAnalyticsDashboard({ formId }: { formId: string }) {
+function FormAnalyticsDashboard({ formId }: { formId: string }) {
   const [data, setData]       = useState<FormAnalytics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState<string | null>(null)
-  const [funnelOpen, setFunnelOpen]     = useState(false)
-  const [dropOffOpen, setDropOffOpen]   = useState(false)
+  const [funnelOpen, setFunnelOpen]   = useState(false)
+  const [dropOffOpen, setDropOffOpen] = useState(false)
 
   useEffect(() => {
     formAPI.analytics(formId)
@@ -193,13 +181,8 @@ export default function FormAnalyticsDashboard({ formId }: { formId: string }) {
 
   return (
     <div className="space-y-6">
-
-      {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard
-          label="Total Sessions"
-          value={data.total_sessions}
-        />
+        <StatCard label="Total Sessions" value={data.total_sessions} />
         <StatCard
           label="Completed"
           value={data.completed_sessions}
@@ -217,7 +200,6 @@ export default function FormAnalyticsDashboard({ formId }: { formId: string }) {
         />
       </div>
 
-      {/* ── Language distribution ── */}
       {langEntries.length > 1 && (
         <div className="bg-white border border-sand rounded-xl p-4">
           <h3 className="text-sm font-semibold text-ink mb-3">Language Distribution</h3>
@@ -233,7 +215,6 @@ export default function FormAnalyticsDashboard({ formId }: { formId: string }) {
         </div>
       )}
 
-      {/* ── Completion funnel (collapsible) ── */}
       <CollapsibleSection
         title="Completion Funnel"
         subtitle="% of sessions that filled each field"
@@ -257,7 +238,6 @@ export default function FormAnalyticsDashboard({ formId }: { formId: string }) {
         </p>
       </CollapsibleSection>
 
-      {/* ── Field-level drop-off table (collapsible) ── */}
       <CollapsibleSection
         title="Field Drop-off Analysis"
         subtitle="Sorted by worst drop-off"
@@ -267,7 +247,8 @@ export default function FormAnalyticsDashboard({ formId }: { formId: string }) {
       >
         <DropOffTable fields={data.field_analytics} />
       </CollapsibleSection>
-
     </div>
   )
 }
+
+export default FormAnalyticsDashboard

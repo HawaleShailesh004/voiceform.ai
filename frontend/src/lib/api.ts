@@ -45,6 +45,20 @@ export interface UploadResult {
   whatsapp_link: string
 }
 
+/** Form health score (from GET /api/forms/:id/health or list). */
+export interface HealthScore {
+  overall_score: number
+  grade: 'A' | 'B' | 'C' | 'D' | 'F'
+  grade_label: string
+  estimated_minutes: number
+  total_fields: number
+  required_fields: number
+  score_breakdown: Record<string, number>
+  issues: string[]
+  suggestions: string[]
+  positives: string[]
+}
+
 export interface AgentForm {
   form_id: string
   form_title: string
@@ -54,6 +68,7 @@ export interface AgentForm {
   field_count: number
   session_count: number
   completed_count: number
+  health_score?: HealthScore
 }
 
 export interface Session {

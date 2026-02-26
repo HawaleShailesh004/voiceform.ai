@@ -1,0 +1,130 @@
+{
+  "session_id": "06564479-81bf-4046-9006-e12d20ae34f8",
+  "form_id": "12a47bbf-3239-4aef-860c-bbacad9711ce",
+  "created_at": "2026-02-26T12:11:47.034030",
+  "status": "completed",
+  "collected": {
+    "name": "Shailesh Hawale",
+    "address": "श्रीनगर",
+    "mobile_number": "9321556764",
+    "email_address": "shaileshqawwali@gmail.com",
+    "next_of_kin_name": "मीना",
+    "next_of_kin_mobile_number": "9989998990",
+    "relationship": "माता जी",
+    "bank_building_society": "skip",
+    "branch": "skip",
+    "next_of_kin_email_address": "meena@gmail.com",
+    "sort_code": "398949",
+    "account_number": "39843098490",
+    "driving_licence_checkbox": true,
+    "passport_birth_certificate_work_permit_checkbox": true,
+    "p45_or_p46_checkbox": true
+  },
+  "chat_history": [
+    {
+      "role": "assistant",
+      "content": "Hey there, welcome! I'm here to help you breeze through your Personal Information Form, making it as quick and easy as possible. Let's start with the first step—could you please share your name with me?"
+    },
+    {
+      "role": "user",
+      "content": "ha, mera nam shailesh hawale hai"
+    },
+    {
+      "role": "assistant",
+      "content": "बिल्कुल! शैलेश, आपका नाम मैंने दर्ज कर लिया है। अब, कृपया अपना पता साझा करें।"
+    },
+    {
+      "role": "user",
+      "content": "में श्रीनगर वाले पद में रहता हूं"
+    },
+    {
+      "role": "assistant",
+      "content": "ठीक है, मैंने आपका पता दर्ज कर लिया है। अब, कृपया अपना मोबाइल नंबर साझा करें।"
+    },
+    {
+      "role": "user",
+      "content": "मोबाइल नंबर है 9321 556764"
+    },
+    {
+      "role": "assistant",
+      "content": "धन्यवाद! आपका मोबाइल नंबर मैंने दर्ज कर लिया है। अब, क्या आप अपना ईमेल पता साझा कर सकते हैं?"
+    },
+    {
+      "role": "user",
+      "content": "ईमेल आईडी शैलेश कव्वाली एट द रेट gmail.com"
+    },
+    {
+      "role": "assistant",
+      "content": "आपका ईमेल पता \"shaileshqawwali@gmail.com\" के रूप में दर्ज कर लिया है। अब, कृपया अपने निकटतम संबंधी का नाम और मोबाइल नंबर साझा करें।"
+    },
+    {
+      "role": "user",
+      "content": "माता जी का नाम है मीना और नंबर है 9989998990"
+    },
+    {
+      "role": "assistant",
+      "content": "आपकी माता जी का नाम मीना और उनका मोबाइल नंबर 9989998990 दर्ज कर लिया गया है। अब, आपका उनके साथ रिश्ता भी बता दें।"
+    },
+    {
+      "role": "user",
+      "content": "तो बता दिया मेरा दिल मेरी वह माता जी है"
+    },
+    {
+      "role": "assistant",
+      "content": "आपकी माता जी के साथ आपका रिश्ता दर्ज कर लिया है। अब, क्या आप अपने बैंक या बिल्डिंग सोसाइटी का नाम और शाखा का नाम बता पाएंगे?"
+    },
+    {
+      "role": "user",
+      "content": "skip it"
+    },
+    {
+      "role": "assistant",
+      "content": "कोई बात नहीं, हम इस हिस्से को बाद में देख सकते हैं। अब, क्या आप अपने करीबी के ईमेल पते के बारे में बता सकते हैं, अगर आपके पास है?"
+    },
+    {
+      "role": "user",
+      "content": "meena@gmail.com"
+    },
+    {
+      "role": "assistant",
+      "content": "धन्यवाद! मैंने आपकी माता जी का ईमेल पता \"meena@gmail.com\" के रूप में दर्ज कर लिया है। अब, कृपया अपने बैंक के सॉर्ट कोड को साझा करें। यह 6 अंकों का नंबर होता है जो आपके बैंक की पहचान करता है।"
+    },
+    {
+      "role": "user",
+      "content": "398949"
+    },
+    {
+      "role": "assistant",
+      "content": "आपका सॉर्ट कोड दर्ज कर लिया गया है। अगर आपको और कुछ जानकारी चाहिए तो बेझिझक बताएं!"
+    },
+    {
+      "role": "user",
+      "content": "ha"
+    },
+    {
+      "role": "assistant",
+      "content": "अब हम कुछ और जानकारी की ओर बढ़ते हैं। अगर आप चाहें तो अपना बैंक खाता संख्या साझा कर सकते हैं, हालांकि यह वैकल्पिक है। इसके अलावा, क्या आप ड्राइविंग लाइसेंस, पासपोर्ट, जन्म प्रमाणपत्र, वर्क परमिट, P45 या P46 में से कुछ जमा कर रहे हैं? अगर हां, तो उनके अनुसार चयन कर सकते हैं।"
+    },
+    {
+      "role": "user",
+      "content": "39843098490"
+    },
+    {
+      "role": "assistant",
+      "content": "आपका खाता नंबर दर्ज कर लिया गया है। क्या आप ड्राइविंग लाइसेंस, पासपोर्ट, जन्म प्रमाणपत्र, वर्क परमिट, P45 या P46 जमा कर रहे हैं? यदि हां, तो कृपया बताएं।"
+    },
+    {
+      "role": "user",
+      "content": "ha"
+    },
+    {
+      "role": "assistant",
+      "content": "बढ़िया, मैंने इसे नोट कर लिया है। अब आपके फॉर्म की सभी आवश्यक जानकारियाँ पूरी हो गई हैं। क्या आपको कुछ और पूछना है या सब कुछ ठीक लग रहा है?"
+    }
+  ],
+  "progress": 100,
+  "lang": "hi",
+  "last_asked_field": "sort_code",
+  "updated_at": "2026-02-26T12:16:51.468715",
+  "filled_pdf_path": "data\\filled\\06564479-81bf-4046-9006-e12d20ae34f8.pdf"
+}

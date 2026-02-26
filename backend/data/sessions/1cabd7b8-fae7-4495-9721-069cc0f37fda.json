@@ -1,0 +1,16 @@
+{
+  "session_id": "1cabd7b8-fae7-4495-9721-069cc0f37fda",
+  "form_id": "12a47bbf-3239-4aef-860c-bbacad9711ce",
+  "created_at": "2026-02-26T12:17:23.634449",
+  "status": "active",
+  "collected": {},
+  "chat_history": [
+    {
+      "role": "assistant",
+      "content": "Hey there! I'm really glad to have you here, and we're going to breeze through this form together. Let's kick things off with your name, shall we?"
+    }
+  ],
+  "progress": 0,
+  "lang": "en",
+  "last_asked_field": null
+}

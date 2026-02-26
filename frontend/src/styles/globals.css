@@ -129,6 +129,8 @@ body {
   .badge-saffron { @apply badge bg-saffron/12 text-saffron-dark; }
   .badge-success { @apply badge bg-success/10 text-success; }
   .badge-muted   { @apply badge bg-sand/30 text-ink-muted; }
+  .badge-amber   { @apply badge bg-amber-100 text-amber-700; }
+  .badge-red     { @apply badge bg-red-100 text-red-700; }
 
   /* ── Typing dots ── */
   .typing-dot {

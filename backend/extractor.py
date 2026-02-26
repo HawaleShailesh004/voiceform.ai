@@ -1,7 +1,7 @@
 """
 Vaarta Form Field Extractor
 Handles: Digital PDFs (AcroForm), Scanned Images, Image-based PDFs
-Vision: Claude claude-opus-4-5
+Vision: Claude claude-sonnet-4
 """
 
 import os
@@ -129,7 +129,7 @@ class FormExtractor:
 
     def __init__(self, api_key: Optional[str] = None):
         self.claude = anthropic.Anthropic(api_key=api_key or os.environ["ANTHROPIC_API_KEY"])
-        self.model  = "claude-opus-4-5"
+        self.model  = "claude-sonnet-4-20250514"
 
     def extract(self, file_path: str) -> ExtractionResult:
         path   = Path(file_path)
@@ -193,7 +193,7 @@ class FormExtractor:
             field_count=len(acro),
             field_numbers=list(range(1, len(acro)+1))
         )
-        labels = self._call_vision(labeled, prompt)
+        labels = self._call_vision(labeled, prompt, media_type=self._media_type_from_bytes(labeled))
         labels = self._parse_json(labels)
 
         type_map = {"Text":"text","CheckBox":"checkbox","RadioButton":"radio","ListBox":"select","ComboBox":"select"}
@@ -230,7 +230,7 @@ class FormExtractor:
         page = doc[0]
         pix  = page.get_pixmap(matrix=fitz.Matrix(150/72, 150/72), alpha=False)
         img  = pix.tobytes("png")
-        res  = self._run_vision(img)
+        res  = self._run_vision(img, media_type="image/png")
         res.source_type = "image_pdf"
         res.page_count  = pages
         res.page_width  = pw
@@ -240,17 +240,48 @@ class FormExtractor:
     # ── Image ──
 
     def _extract_image(self, file_path: str) -> ExtractionResult:
-        with open(file_path, "rb") as f:
+        path = Path(file_path)
+        with open(path, "rb") as f:
             img = f.read()
-        res = self._run_vision(img)
+        media_type = self._media_type_for_suffix(path.suffix.lower())
+        res = self._run_vision(img, media_type=media_type)
         res.source_type = "scanned_image"
         res.page_count  = 1
         return res
 
     # ── Vision Core ──
 
-    def _run_vision(self, img: bytes) -> ExtractionResult:
-        text = self._call_vision(img, VISION_PROMPT)
+    def _media_type_for_suffix(self, suffix: str) -> str:
+        return {
+            ".png":  "image/png",
+            ".jpg":  "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".webp": "image/webp",
+            ".tiff": "image/tiff",
+            ".tif":  "image/tiff",
+            ".bmp":  "image/bmp",
+        }.get(suffix, "image/png")
+
+    def _media_type_from_bytes(self, img: bytes) -> str:
+        """Detect image media type from magic bytes so API gets correct type."""
+        if len(img) < 12:
+            return "image/png"
+        if img[:3] == b"\xff\xd8\xff":
+            return "image/jpeg"
+        if img[:8] == b"\x89PNG\r\n\x1a\n":
+            return "image/png"
+        if img[:4] == b"RIFF" and img[8:12] == b"WEBP":
+            return "image/webp"
+        if img[:2] in (b"II", b"MM"):
+            return "image/tiff"
+        if img[:2] == b"BM":
+            return "image/bmp"
+        return "image/png"
+
+    def _run_vision(self, img: bytes, media_type: str = "image/png") -> ExtractionResult:
+        # Prefer detected type so API never rejects wrong extension
+        media_type = self._media_type_from_bytes(img) or media_type
+        text = self._call_vision(img, VISION_PROMPT, media_type=media_type)
         raw  = self._parse_json(text)
 
         title    = raw.get("form_title","Unknown Form") if isinstance(raw, dict) else "Unknown Form"
@@ -296,15 +327,17 @@ class FormExtractor:
             warnings=warnings,
         )
 
-    def _call_vision(self, img: bytes, prompt: str) -> str:
+    def _call_vision(self, img: bytes, prompt: str, media_type: str = "image/png") -> str:
+        # Always detect from bytes so API never rejects (overrides any wrong caller type)
+        media_type = self._media_type_from_bytes(img)
         msg = self.claude.messages.create(
             model=self.model,
-            max_tokens=4096,
+            max_tokens=16384,
             messages=[{
                 "role": "user",
                 "content": [
-                    {"type":"image","source":{"type":"base64","media_type":"image/png","data":base64.b64encode(img).decode()}},
-                    {"type":"text","text":prompt},
+                    {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": base64.b64encode(img).decode()}},
+                    {"type": "text", "text": prompt},
                 ],
             }],
         )
@@ -313,9 +346,32 @@ class FormExtractor:
     def _parse_json(self, text: str):
         text = text.strip()
         if text.startswith("```"):
-            text = "\n".join(text.split("\n")[1:])
-        text = text.rsplit("```",1)[0].strip()
-        return json.loads(text)
+            parts = text.split("\n", 1)
+            text = parts[1] if len(parts) > 1 else ""
+            text = text.rsplit("```", 1)[0].strip()
+        else:
+            text = text.rsplit("```", 1)[0].strip()
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            # Truncated response: try closing unterminated string and structure
+            for suffix in ('"}\n  ]\n}', '"\n  ]\n}', '\n  ]\n}', '\n]\n}'):
+                try:
+                    return json.loads(text + suffix)
+                except json.JSONDecodeError:
+                    continue
+            # Fallback: trim from end to find last valid JSON
+            for trim in range(50, min(3000, len(text)), 50):
+                try:
+                    return json.loads(text[:-trim] + "\n  ]\n}")
+                except json.JSONDecodeError:
+                    continue
+            for trim in range(1, 50):
+                try:
+                    return json.loads(text[:-trim] + "\n  ]\n}")
+                except json.JSONDecodeError:
+                    continue
+            raise
 
     def _snake(self, name: str) -> str:
         import re
