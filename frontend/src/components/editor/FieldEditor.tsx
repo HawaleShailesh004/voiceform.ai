@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import {
   GripVertical,
@@ -344,7 +345,15 @@ function FieldCard({
 }: FieldCardProps) {
   const [editingLabel, setEditingLabel] = useState(false);
   const [showTypes, setShowTypes] = useState(false);
+  const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number } | null>(null);
+  const typeButtonRef = useRef<HTMLButtonElement>(null);
   const Icon = typeIcon(field.field_type);
+
+  useLayoutEffect(() => {
+    if (!showTypes || !typeButtonRef.current) return;
+    const rect = typeButtonRef.current.getBoundingClientRect();
+    setDropdownRect({ left: rect.left, top: rect.top });
+  }, [showTypes]);
 
   return (
     <Reorder.Item
@@ -414,9 +423,11 @@ function FieldCard({
 
           {/* Controls row */}
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Type selector */}
+            {/* Type selector — dropdown in portal so it's not clipped by overflow */}
             <div className="relative">
               <button
+                ref={typeButtonRef}
+                type="button"
                 className="flex items-center gap-1.5 px-2 py-1 bg-teal/6 rounded text-teal text-xs font-body font-medium hover:bg-teal/12 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -427,36 +438,47 @@ function FieldCard({
                 {field.field_type}
                 <ChevronDown size={10} />
               </button>
-              <AnimatePresence>
-                {showTypes && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="absolute top-full left-0 mt-1 bg-white border border-teal/12 rounded-lg shadow-lift z-50 py-1 w-36"
-                  >
-                    {FIELD_TYPES.map(({ value, label, icon: TIcon }) => (
-                      <button
-                        key={value}
-                        className={clsx(
-                          "w-full flex items-center gap-2.5 px-3 py-1.5 text-xs font-body hover:bg-teal/6 transition-colors",
-                          field.field_type === value
-                            ? "text-teal font-semibold"
-                            : "text-ink-muted",
-                        )}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onUpdate({ field_type: value as any });
-                          setShowTypes(false);
-                        }}
-                      >
-                        <TIcon size={12} />
-                        {label}
-                      </button>
-                    ))}
-                  </motion.div>
+              {typeof document !== "undefined" &&
+                showTypes &&
+                dropdownRect &&
+                createPortal(
+                  <AnimatePresence>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 4 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      style={{
+                        position: "fixed",
+                        left: dropdownRect.left,
+                        top: dropdownRect.top + 28,
+                        zIndex: 9999,
+                      }}
+                      className="bg-white border border-teal/12 rounded-lg shadow-lift py-1 w-36 min-w-max ring-1 ring-black/5"
+                    >
+                      {FIELD_TYPES.map(({ value, label, icon: TIcon }) => (
+                        <button
+                          key={value}
+                          type="button"
+                          className={clsx(
+                            "w-full flex items-center gap-2.5 px-3 py-1.5 text-xs font-body hover:bg-teal/6 transition-colors text-left",
+                            field.field_type === value
+                              ? "text-teal font-semibold"
+                              : "text-ink-muted",
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onUpdate({ field_type: value as any });
+                            setShowTypes(false);
+                          }}
+                        >
+                          <TIcon size={12} />
+                          {label}
+                        </button>
+                      ))}
+                    </motion.div>
+                  </AnimatePresence>,
+                  document.body,
                 )}
-              </AnimatePresence>
             </div>
 
             {/* Required toggle */}
@@ -532,21 +554,36 @@ interface CoordinatesPopupProps {
   field: FormField;
   onUpdate: (updates: Partial<FormField>) => void;
   onClose: () => void;
+  onApplyToAll?: (styleUpdates: Partial<FormField>) => void;
+  /** Global defaults (from "Font & alignment" dropdown) when field has no override */
+  defaultFontSize?: number;
+  defaultFontStyle?: string;
+  defaultAlignH?: "left" | "center" | "right";
+  defaultAlignV?: "top" | "middle" | "bottom";
 }
 
-function CoordinatesPopup({ field, onUpdate, onClose }: CoordinatesPopupProps) {
+function CoordinatesPopup({
+  field,
+  onUpdate,
+  onClose,
+  onApplyToAll,
+  defaultFontSize = 14,
+  defaultFontStyle = "normal",
+  defaultAlignH = "left",
+  defaultAlignV = "top",
+}: CoordinatesPopupProps) {
   const bb = field.bounding_box;
   const [xmin, setXmin] = useState(bb.xmin);
   const [ymin, setYmin] = useState(bb.ymin);
   const [xmax, setXmax] = useState(bb.xmax);
   const [ymax, setYmax] = useState(bb.ymax);
-  const [fontSize, setFontSize] = useState(field.font_size ?? 14);
-  const [fontStyle, setFontStyle] = useState(field.font_style ?? "normal");
+  const [fontSize, setFontSize] = useState(field.font_size ?? defaultFontSize);
+  const [fontStyle, setFontStyle] = useState(field.font_style ?? defaultFontStyle);
   const [textAlignH, setTextAlignH] = useState<"left" | "center" | "right">(
-    field.text_align_h ?? "left",
+    field.text_align_h ?? defaultAlignH,
   );
   const [textAlignV, setTextAlignV] = useState<"top" | "middle" | "bottom">(
-    field.text_align_v ?? "top",
+    field.text_align_v ?? defaultAlignV,
   );
   const [fontColor, setFontColor] = useState(field.font_color ?? "#0D3D3A");
 
@@ -555,10 +592,10 @@ function CoordinatesPopup({ field, onUpdate, onClose }: CoordinatesPopupProps) {
     setYmin(bb.ymin);
     setXmax(bb.xmax);
     setYmax(bb.ymax);
-    setFontSize(field.font_size ?? 14);
-    setFontStyle(field.font_style ?? "normal");
-    setTextAlignH(field.text_align_h ?? "left");
-    setTextAlignV(field.text_align_v ?? "top");
+    setFontSize(field.font_size ?? defaultFontSize);
+    setFontStyle(field.font_style ?? defaultFontStyle);
+    setTextAlignH(field.text_align_h ?? defaultAlignH);
+    setTextAlignV(field.text_align_v ?? defaultAlignV);
     setFontColor(field.font_color ?? "#0D3D3A");
   }, [
     field.field_name,
@@ -571,7 +608,19 @@ function CoordinatesPopup({ field, onUpdate, onClose }: CoordinatesPopupProps) {
     field.text_align_h,
     field.text_align_v,
     field.font_color,
+    defaultFontSize,
+    defaultFontStyle,
+    defaultAlignH,
+    defaultAlignV,
   ]);
+
+  const styleUpdates = () => ({
+    font_size: fontSize,
+    font_style: fontStyle,
+    text_align_h: textAlignH,
+    text_align_v: textAlignV,
+    font_color: fontColor,
+  });
 
   const apply = () => {
     const n = (v: number) => Math.max(0, Math.min(1000, Math.round(v)));
@@ -582,12 +631,14 @@ function CoordinatesPopup({ field, onUpdate, onClose }: CoordinatesPopupProps) {
         xmax: n(xmax),
         ymax: n(ymax),
       },
-      font_size: fontSize,
-      font_style: fontStyle,
-      text_align_h: textAlignH,
-      text_align_v: textAlignV,
-      font_color: fontColor,
+      ...styleUpdates(),
     });
+  };
+
+  const applyToAll = () => {
+    const updates = styleUpdates();
+    onApplyToAll?.(updates);
+    onClose();
   };
 
   return (
@@ -765,16 +816,28 @@ function CoordinatesPopup({ field, onUpdate, onClose }: CoordinatesPopupProps) {
           </div>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={() => {
-          apply();
-          onClose();
-        }}
-        className="btn-primary btn-sm w-full"
-      >
-        Apply
-      </button>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            apply();
+            onClose();
+          }}
+          className="btn-primary btn-sm flex-1"
+        >
+          Apply
+        </button>
+        {onApplyToAll && (
+          <button
+            type="button"
+            onClick={applyToAll}
+            className="btn-secondary btn-sm flex-1"
+            title="Apply font, style, alignment & color to all fields"
+          >
+            Apply to all
+          </button>
+        )}
+      </div>
     </motion.div>
   );
 }
@@ -821,6 +884,10 @@ export default function FieldEditor({
   const updateField = (i: number, updates: Partial<FormField>) => {
     const next = fields.map((f, idx) => (idx === i ? { ...f, ...updates } : f));
     onChange(next);
+  };
+
+  const applyStyleToAllFields = (styleUpdates: Partial<FormField>) => {
+    onChange(fields.map((f) => ({ ...f, ...styleUpdates })));
   };
 
   const deleteField = (i: number) => {
@@ -1011,6 +1078,11 @@ export default function FieldEditor({
               field={fields[activeIdx]}
               onUpdate={(updates) => updateField(activeIdx, updates)}
               onClose={() => setShowCoordinatesModal(false)}
+              onApplyToAll={applyStyleToAllFields}
+              defaultFontSize={previewFontSize}
+              defaultFontStyle={previewFontStyle}
+              defaultAlignH={previewAlignH}
+              defaultAlignV={previewAlignV}
             />
           )}
         </AnimatePresence>

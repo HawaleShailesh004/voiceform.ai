@@ -1,0 +1,171 @@
+{
+  "session_id": "cd23ef26-2b2f-4bcf-af03-65d3e122a26c",
+  "form_id": "12a47bbf-3239-4aef-860c-bbacad9711ce",
+  "created_at": "2026-02-26T09:27:13.415687",
+  "status": "completed",
+  "collected": {
+    "name": "Shailesh Hawale",
+    "address": "Srinagar, warlipada, wagle estate, Thane",
+    "mobile_number": "9321556764",
+    "email_address": "shailesh@gmail.com",
+    "next_of_kin_name": "Piyush",
+    "relationship": "brother",
+    "next_of_kin_mobile_number": "8888889999",
+    "next_of_kin_email_address": "piyush@gmail.com",
+    "branch": "Srinagar",
+    "bank_building_society": "Ganesh Apartment",
+    "sort_code": "400400",
+    "driving_licence_checkbox": true,
+    "passport_birth_certificate_work_permit_checkbox": true,
+    "p45_or_p46_checkbox": true
+  },
+  "chat_history": [
+    {
+      "role": "user",
+      "content": "yes you can start"
+    },
+    {
+      "role": "assistant",
+      "content": "Great! Let's start with your full name and date of birth. Could you please share those with me?"
+    },
+    {
+      "role": "user",
+      "content": "yes my name is Shailesh Hawale and my I have I born on 4th of December in 2004"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks, Shailesh! Got your name. I'll note down your date of birth as 04/12/2004."
+    },
+    {
+      "role": "user",
+      "content": "ok good"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for confirming! Now, could you please share your home address?"
+    },
+    {
+      "role": "user",
+      "content": "yes I live in Srinagar warlipada wagle estate city Thane"
+    },
+    {
+      "role": "assistant",
+      "content": "Great, thanks for sharing your address. I have noted down the street as \"Srinagar, Warlipada, Wagle Estate\" and the city as \"Thane.\" Could you please provide the state and pincode to complete it?"
+    },
+    {
+      "role": "user",
+      "content": "yes my status Maharashtra and pin code is 400 1604"
+    },
+    {
+      "role": "assistant",
+      "content": "I've noted down the state as Maharashtra and the pincode as 400160. Thanks for providing those details, Shailesh! Let's move on to your mobile number. Could you share your 10-digit Indian mobile number with me?"
+    },
+    {
+      "role": "user",
+      "content": "not 4000160 its 400604"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for clarifying! I've updated your pincode to 400604. Now, could you share your 10-digit Indian mobile number?"
+    },
+    {
+      "role": "user",
+      "content": "yes my number is 932155 6764"
+    },
+    {
+      "role": "assistant",
+      "content": "Got it, Shailesh! I'll record your mobile number as 9321556764. Let's move on to your email address. Could you please share it with me?"
+    },
+    {
+      "role": "user",
+      "content": "yes my email address is Shailesh Hawale my name and at the rate gmail.com"
+    },
+    {
+      "role": "assistant",
+      "content": "Hmm, that email doesn't look quite right — could you double-check it?"
+    },
+    {
+      "role": "user",
+      "content": "is it shailesh@gmail.com"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for confirming your email address as shailesh@gmail.com. Moving on, could you please provide the full name of your next of kin?"
+    },
+    {
+      "role": "user",
+      "content": "acids name is Piyush and who is my brother"
+    },
+    {
+      "role": "assistant",
+      "content": "Got it, your next of kin is Piyush. Since Piyush is your brother, I'll note down the relationship as well. Could you also share Piyush's mobile number?"
+    },
+    {
+      "role": "user",
+      "content": "yes I is mobile number is 88888899"
+    },
+    {
+      "role": "assistant",
+      "content": "It looks like Piyush's mobile number might be incomplete. Could you please provide the full 10-digit number?"
+    },
+    {
+      "role": "user",
+      "content": "yes I forgot to add one last nine at the end write it"
+    },
+    {
+      "role": "assistant",
+      "content": "Got it, so Piyush's mobile number is 8888889999. Thanks for confirming! If you have Piyush's email, you can share that too, but it's optional."
+    },
+    {
+      "role": "user",
+      "content": "I will say that the email is piyush at the rate gmail.com"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for sharing Piyush's email as piyush@gmail.com. Let's move on to your banking details. Could you please provide the name of your Bank or Building Society, and the branch name or location?"
+    },
+    {
+      "role": "user",
+      "content": "yes it is allocated in Ganeshwar apartment and branch name in Srinagar"
+    },
+    {
+      "role": "assistant",
+      "content": "Got it! I'll note the branch location as 'Srinagar' for now. Could you also share the name of your Bank or Building Society?"
+    },
+    {
+      "role": "user",
+      "content": "Ganesh apartment"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for sharing. I'll note down 'Ganesh Apartment' as your Bank/Building Society name. Now, could you please provide the sort code for your bank? It's a 6-digit number."
+    },
+    {
+      "role": "user",
+      "content": "400400"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for providing the sort code as 400400. Moving forward, do you have a bank account number you'd like to include, or should we skip that for now?"
+    },
+    {
+      "role": "user",
+      "content": "stupid for now"
+    },
+    {
+      "role": "assistant",
+      "content": "No problem, we can skip the bank account number for now. Let's move on to identification documents. Are you submitting any of the following as identification: a driving licence, passport, birth certificate, work permit, P45, or P46? Just let me know which ones apply."
+    },
+    {
+      "role": "user",
+      "content": "submitting all documents"
+    },
+    {
+      "role": "assistant",
+      "content": "Great, I'll note that you're submitting a driving licence, passport, birth certificate, work permit, P45, and P46. That's everything we need!"
+    }
+  ],
+  "progress": 93,
+  "lang": "en",
+  "filled_pdf_path": "data\\filled\\cd23ef26-2b2f-4bcf-af03-65d3e122a26c.pdf"
+}

@@ -19,18 +19,18 @@
       "validation_rules": {},
       "purpose": "Personal identification",
       "bounding_box": {
-        "xmin": 199,
+        "xmin": 201,
         "ymin": 169,
-        "xmax": 919,
+        "xmax": 921,
         "ymax": 197
       },
       "acro_field_name": null,
       "options": null,
-      "font_size": 14,
-      "font_style": "normal",
+      "font_size": 20,
+      "font_style": "bold",
       "text_align_h": "left",
-      "text_align_v": "top",
-      "font_color": "#0D3D3A"
+      "text_align_v": "bottom",
+      "font_color": "#000000"
     },
     {
       "field_name": "address",
@@ -43,13 +43,18 @@
       "validation_rules": {},
       "purpose": "Contact and residency information",
       "bounding_box": {
-        "xmin": 201,
-        "ymin": 201,
-        "xmax": 921,
-        "ymax": 235
+        "xmin": 203,
+        "ymin": 200,
+        "xmax": 923,
+        "ymax": 234
       },
       "acro_field_name": null,
-      "options": null
+      "options": null,
+      "font_size": 20,
+      "font_style": "bold",
+      "text_align_h": "left",
+      "text_align_v": "bottom",
+      "font_color": "#000000"
     },
     {
       "field_name": "mobile_number",
@@ -70,7 +75,12 @@
         "ymax": 263
       },
       "acro_field_name": null,
-      "options": null
+      "options": null,
+      "font_size": 20,
+      "font_style": "bold",
+      "text_align_h": "left",
+      "text_align_v": "bottom",
+      "font_color": "#000000"
     },
     {
       "field_name": "email_address",
@@ -91,7 +101,12 @@
         "ymax": 297
       },
       "acro_field_name": null,
-      "options": null
+      "options": null,
+      "font_size": 20,
+      "font_style": "bold",
+      "text_align_h": "left",
+      "text_align_v": "bottom",
+      "font_color": "#000000"
     },
     {
       "field_name": "next_of_kin_name",
@@ -104,13 +119,18 @@
       "validation_rules": {},
       "purpose": "Emergency contact identification",
       "bounding_box": {
-        "xmin": 200,
-        "ymin": 363,
-        "xmax": 920,
-        "ymax": 391
+        "xmin": 205,
+        "ymin": 362,
+        "xmax": 925,
+        "ymax": 390
       },
       "acro_field_name": null,
-      "options": null
+      "options": null,
+      "font_size": 20,
+      "font_style": "bold",
+      "text_align_h": "left",
+      "text_align_v": "bottom",
+      "font_color": "#000000"
     },
     {
       "field_name": "next_of_kin_mobile_number",
@@ -131,7 +151,12 @@
         "ymax": 424
       },
       "acro_field_name": null,
-      "options": null
+      "options": null,
+      "font_size": 20,
+      "font_style": "bold",
+      "text_align_h": "left",
+      "text_align_v": "bottom",
+      "font_color": "#000000"
     },
     {
       "field_name": "next_of_kin_email_address",
@@ -152,7 +177,12 @@
         "ymax": 456
       },
       "acro_field_name": null,
-      "options": null
+      "options": null,
+      "font_size": 20,
+      "font_style": "bold",
+      "text_align_h": "left",
+      "text_align_v": "bottom",
+      "font_color": "#000000"
     },
     {
       "field_name": "relationship",
@@ -171,7 +201,12 @@
         "ymax": 490
       },
       "acro_field_name": null,
-      "options": null
+      "options": null,
+      "font_size": 20,
+      "font_style": "bold",
+      "text_align_h": "left",
+      "text_align_v": "bottom",
+      "font_color": "#000000"
     },
     {
       "field_name": "bank_building_society",
@@ -185,12 +220,17 @@
       "purpose": "Banking institution identification for payroll",
       "bounding_box": {
         "xmin": 266,
-        "ymin": 562,
+        "ymin": 564,
         "xmax": 956,
         "ymax": 590
       },
       "acro_field_name": null,
-      "options": null
+      "options": null,
+      "font_size": 20,
+      "font_style": "bold",
+      "text_align_h": "left",
+      "text_align_v": "bottom",
+      "font_color": "#000000"
     },
     {
       "field_name": "branch",
@@ -209,7 +249,12 @@
         "ymax": 621
       },
       "acro_field_name": null,
-      "options": null
+      "options": null,
+      "font_size": 20,
+      "font_style": "bold",
+      "text_align_h": "left",
+      "text_align_v": "bottom",
+      "font_color": "#000000"
     },
     {
       "field_name": "sort_code",
@@ -228,7 +273,12 @@
         "ymax": 656
       },
       "acro_field_name": null,
-      "options": null
+      "options": null,
+      "font_size": 20,
+      "font_style": "bold",
+      "text_align_h": "left",
+      "text_align_v": "bottom",
+      "font_color": "#000000"
     },
     {
       "field_name": "account_number",
@@ -248,11 +298,11 @@
       },
       "acro_field_name": null,
       "options": null,
-      "font_size": 14,
-      "font_style": "normal",
+      "font_size": 20,
+      "font_style": "bold",
       "text_align_h": "left",
-      "text_align_v": "top",
-      "font_color": "#0D3D3A"
+      "text_align_v": "bottom",
+      "font_color": "#000000"
     },
     {
       "field_name": "driving_licence_checkbox",
@@ -272,11 +322,11 @@
       },
       "acro_field_name": null,
       "options": null,
-      "font_size": 14,
-      "font_style": "normal",
+      "font_size": 20,
+      "font_style": "bold",
       "text_align_h": "left",
-      "text_align_v": "middle",
-      "font_color": "#0D3D3A"
+      "text_align_v": "bottom",
+      "font_color": "#000000"
     },
     {
       "field_name": "passport_birth_certificate_work_permit_checkbox",
@@ -296,11 +346,11 @@
       },
       "acro_field_name": null,
       "options": null,
-      "font_size": 14,
-      "font_style": "normal",
+      "font_size": 20,
+      "font_style": "bold",
       "text_align_h": "left",
-      "text_align_v": "top",
-      "font_color": "#0D3D3A"
+      "text_align_v": "bottom",
+      "font_color": "#000000"
     },
     {
       "field_name": "p45_or_p46_checkbox",
@@ -320,11 +370,11 @@
       },
       "acro_field_name": null,
       "options": null,
-      "font_size": 14,
-      "font_style": "normal",
+      "font_size": 20,
+      "font_style": "bold",
       "text_align_h": "left",
-      "text_align_v": "middle",
-      "font_color": "#0D3D3A"
+      "text_align_v": "bottom",
+      "font_color": "#000000"
     }
   ],
   "warnings": [],

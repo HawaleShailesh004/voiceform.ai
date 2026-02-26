@@ -79,15 +79,34 @@ export default function EditFormPage() {
       formAPI.preview(formId).catch(() => null),
     ])
       .then(([data, img]) => {
-        const f = data.fields || []
-        setFields(f)
+        const f = (data.fields || []) as FormField[]
         setTitle(data.form_title || 'Untitled Form')
         setPreview(img)
-        savedFields.current = f
-        savedTitle.current = data.form_title || 'Untitled Form'
         const sv = data.sample_values || {}
         setSampleValues(sv)
         if (Object.keys(sv).length > 0) setLivePreview(true)
+        // Use first field as "saved default" and init dropdown from it
+        const defSize = f[0]?.font_size ?? 14
+        const defStyle = f[0]?.font_style ?? 'normal'
+        const defH = (f[0]?.text_align_h ?? 'left') as 'left' | 'center' | 'right'
+        const defV = (f[0]?.text_align_v ?? 'top') as 'top' | 'middle' | 'bottom'
+        if (f.length > 0) {
+          setPreviewFontSize(defSize)
+          setPreviewFontStyle(defStyle)
+          setPreviewAlignH(defH)
+          setPreviewAlignV(defV)
+        }
+        // Clear font/style/align on fields that match default so preview uses global dropdown for them
+        const normalized = f.map((field) => ({
+          ...field,
+          font_size: field.font_size === defSize ? undefined : field.font_size,
+          font_style: field.font_style === defStyle ? undefined : field.font_style,
+          text_align_h: field.text_align_h === defH ? undefined : field.text_align_h,
+          text_align_v: field.text_align_v === defV ? undefined : field.text_align_v,
+        }))
+        setFields(normalized)
+        savedFields.current = normalized
+        savedTitle.current = data.form_title || 'Untitled Form'
       })
       .catch(() => toast.error('Could not load form'))
       .finally(() => setLoading(false))
@@ -156,12 +175,20 @@ export default function EditFormPage() {
   }
 
   // ── Save ──────────────────────────────────────────────
+  // Merge: global "Font & alignment" as default; per-field values from coordinates modal override
   const doSave = useCallback(async (f = fields, t = title) => {
+    const merged = f.map((field) => ({
+      ...field,
+      font_size: field.font_size ?? previewFontSize,
+      font_style: field.font_style ?? previewFontStyle,
+      text_align_h: field.text_align_h ?? previewAlignH,
+      text_align_v: field.text_align_v ?? previewAlignV,
+    }))
     setSaving(true)
     setSaveError(false)
     try {
-      await formAPI.update(formId, f, t)
-      savedFields.current = f
+      await formAPI.update(formId, merged, t)
+      savedFields.current = merged
       savedTitle.current = t
       setDirty(false)
       setSaved(true)
@@ -172,7 +199,21 @@ export default function EditFormPage() {
     } finally {
       setSaving(false)
     }
-  }, [formId, fields, title])
+  }, [formId, fields, title, previewFontSize, previewFontStyle, previewAlignH, previewAlignV])
+
+  // When global "Font & alignment" changes, mark unsaved and schedule auto-save (same as field edits)
+  const scheduleSave = useCallback(() => {
+    setDirty(true)
+    setSaved(false)
+    setSaveError(false)
+    clearTimeout(autoSaveTimer.current)
+    autoSaveTimer.current = setTimeout(() => doSave(), 30_000)
+  }, [doSave])
+
+  const handleGlobalPreviewChange = useCallback(<T,>(setter: (v: T) => void, value: T) => {
+    setter(value)
+    scheduleSave()
+  }, [scheduleSave])
 
   const handleSave = () => doSave()
 
@@ -450,7 +491,7 @@ export default function EditFormPage() {
                           <label className="label-xs text-ink-faint block mb-1">Font size</label>
                           <select
                             value={previewFontSize}
-                            onChange={e => setPreviewFontSize(Number(e.target.value))}
+                            onChange={e => handleGlobalPreviewChange(setPreviewFontSize, Number(e.target.value))}
                             className="input text-xs py-1.5 w-full"
                           >
                             {FONT_SIZES.map(n => (<option key={n} value={n}>{n}px</option>))}
@@ -460,7 +501,7 @@ export default function EditFormPage() {
                           <label className="label-xs text-ink-faint block mb-1">Style</label>
                           <select
                             value={previewFontStyle}
-                            onChange={e => setPreviewFontStyle(e.target.value)}
+                            onChange={e => handleGlobalPreviewChange(setPreviewFontStyle, e.target.value)}
                             className="input text-xs py-1.5 w-full"
                           >
                             {FONT_STYLES.map(({ value, label }) => (<option key={value} value={value}>{label}</option>))}
@@ -470,7 +511,7 @@ export default function EditFormPage() {
                           <label className="label-xs text-ink-faint block mb-1">Align H</label>
                           <select
                             value={previewAlignH}
-                            onChange={e => setPreviewAlignH(e.target.value as 'left' | 'center' | 'right')}
+                            onChange={e => handleGlobalPreviewChange(setPreviewAlignH, e.target.value as 'left' | 'center' | 'right')}
                             className="input text-xs py-1.5 w-full"
                           >
                             {ALIGN_H.map(({ value, label }) => (<option key={value} value={value}>{label}</option>))}
@@ -480,7 +521,7 @@ export default function EditFormPage() {
                           <label className="label-xs text-ink-faint block mb-1">Align V</label>
                           <select
                             value={previewAlignV}
-                            onChange={e => setPreviewAlignV(e.target.value as 'top' | 'middle' | 'bottom')}
+                            onChange={e => handleGlobalPreviewChange(setPreviewAlignV, e.target.value as 'top' | 'middle' | 'bottom')}
                             className="input text-xs py-1.5 w-full"
                           >
                             {ALIGN_V.map(({ value, label }) => (<option key={value} value={value}>{label}</option>))}
