@@ -1,0 +1,131 @@
+{
+  "session_id": "ccf03e58-59f2-496d-b950-e374fd6aad29",
+  "form_id": "12a47bbf-3239-4aef-860c-bbacad9711ce",
+  "created_at": "2026-02-25T12:35:04.967700",
+  "status": "filled",
+  "collected": {
+    "name": "Shailesh",
+    "address": "shree naagr warli pada, thane, 400604",
+    "mobile_number": "2874295478",
+    "email_address": "shailesh@gmail.com",
+    "next_of_kin_name": "Piyush Hawale",
+    "relationship": "Brother",
+    "next_of_kin_mobile_number": "2399947984",
+    "bank_building_society": "BOM Bank",
+    "branch": "Shree Nagar Branch, Ganga Building",
+    "account_number": "3398484",
+    "sort_code": "398039",
+    "driving_licence_checkbox": true,
+    "passport_birth_certificate_work_permit_checkbox": true,
+    "p45_or_p46_checkbox": true
+  },
+  "chat_history": [
+    {
+      "role": "user",
+      "content": "hii"
+    },
+    {
+      "role": "assistant",
+      "content": "Hi there! Ready to fill out the form? Let's start with your full name and date of birth."
+    },
+    {
+      "role": "user",
+      "content": "my name is shailesh, i born in 4 dec of year 20004"
+    },
+    {
+      "role": "assistant",
+      "content": "Got it! Your name is Shailesh, and I have your date of birth as 04/12/2004. Let's move on to your address next. Could you share that with me?"
+    },
+    {
+      "role": "user",
+      "content": "shree naagr warli pada"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for sharing your address. Is there a city, state, or pincode you can provide to complete it?"
+    },
+    {
+      "role": "user",
+      "content": "thane, 400604"
+    },
+    {
+      "role": "assistant",
+      "content": "Great, thank you! I have the address as \"Shree Naagr Warli Pada, Thane, 400604.\" Let's move on to your mobile number now. Could you provide that?"
+    },
+    {
+      "role": "user",
+      "content": "767867888"
+    },
+    {
+      "role": "assistant",
+      "content": "It looks like the mobile number might be missing a digit. Could you please provide your full 10-digit mobile number?"
+    },
+    {
+      "role": "user",
+      "content": "2874295478"
+    },
+    {
+      "role": "assistant",
+      "content": "Great, thanks for that! Now let's move on to your email address. Could you share that with me?"
+    },
+    {
+      "role": "user",
+      "content": "shai2dk"
+    },
+    {
+      "role": "assistant",
+      "content": "Hmm, that email doesn't look quite right — could you double-check it for me? It should have an '@' and a domain after it, like 'example@gmail.com'."
+    },
+    {
+      "role": "user",
+      "content": "shailesh@gmail.com"
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect, thanks for confirming your email as shailesh@gmail.com! Now, could you tell me the full name of your next of kin?"
+    },
+    {
+      "role": "user",
+      "content": "piyush hawale, he is my brother & his phone no is 2399947984"
+    },
+    {
+      "role": "assistant",
+      "content": "Got it! Your next of kin is Piyush Hawale, your brother, and his phone number is 2399947984. If you have his email address, feel free to share it, but it's optional. Let's also move on to your bank details. Could you tell me the name of your bank or building society and the branch location?"
+    },
+    {
+      "role": "user",
+      "content": "yes, bom bank, shree nagar branch, ganga building"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for the details! I've noted your bank as BOM Bank, and the branch as Shree Nagar Branch in Ganga Building. Next, could you provide your bank's sort code and account number?"
+    },
+    {
+      "role": "user",
+      "content": "sort code 3939, account no 3398484"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for providing those details! It looks like the sort code might be missing a couple of digits, as it should be a 6-digit number. Could you please confirm that for me?"
+    },
+    {
+      "role": "user",
+      "content": "398039"
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect, thank you for confirming the sort code as 398039. Now, are you submitting any identification documents like a driving license, passport, birth certificate, work permit, or tax documents like P45 or P46? You can let me know which ones, if any, you're submitting."
+    },
+    {
+      "role": "user",
+      "content": "yes all of them"
+    },
+    {
+      "role": "assistant",
+      "content": "Great! I'll mark all identification options as being submitted. If there's anything specific you need to add or clarify, just let me know. Meanwhile, is there anything else you'd like to check or update?"
+    }
+  ],
+  "progress": 93,
+  "lang": "en",
+  "filled_pdf_path": "data\\filled\\ccf03e58-59f2-496d-b950-e374fd6aad29.pdf"
+}

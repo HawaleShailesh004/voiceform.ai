@@ -1,90 +1,55 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
+  content: ['./src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
-        // Primary palette — deep navy + warm off-white + amber
-        ink:    '#0E1628',   // near-black for text
-        navy:   '#1B2B4B',   // primary backgrounds
-        slate:  '#2C3F5E',   // secondary surfaces
-        steel:  '#4A6080',   // borders, muted
-        mist:   '#8FA0B5',   // placeholder text
-        paper:  '#F4F1EB',   // off-white backgrounds
-        cream:  '#FAF8F4',   // lightest surface
-        white:  '#FFFFFF',
-        // Accent
-        amber:  '#C9893A',   // primary CTA
-        'amber-light': '#E5A85C',
-        'amber-dim':   '#8C5E24',
-        // Status
+        teal:    { DEFAULT: '#0D3D3A', 50: '#E8F4F3', 100: '#C5E4E2', 200: '#8CCBC8', 300: '#4FADA9', 400: '#2A8985', 500: '#0D3D3A', 600: '#0A302E', 700: '#082422', 800: '#051817', 900: '#030D0C' },
+        saffron: { DEFAULT: '#E8873A', light: '#F4A96A', dark: '#C06A22', pale: '#FDF0E6' },
+        cream:   { DEFAULT: '#FAF6EF', dark: '#F0EAE0', darker: '#E4DDD2' },
+        sand:    '#D4C9B8',
+        ink:     { DEFAULT: '#1A1208', light: '#3D3020', muted: '#6B5E4E', faint: '#9E8E7E' },
+        white:   '#FFFFFF',
         success: '#2D7A4F',
         error:   '#B03A2E',
-        warning: '#C9893A',
       },
       fontFamily: {
-        display: ['Playfair Display', 'Georgia', 'serif'],
-        body:    ['DM Sans', 'system-ui', 'sans-serif'],
-        mono:    ['JetBrains Mono', 'monospace'],
+        display: ['"Fraunces"', 'Georgia', 'serif'],
+        body:    ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        mono:    ['"JetBrains Mono"', 'monospace'],
       },
-      fontSize: {
-        'display-xl': ['3.5rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
-        'display-lg': ['2.5rem', { lineHeight: '1.15', letterSpacing: '-0.02em' }],
-        'display-md': ['1.875rem', { lineHeight: '1.2', letterSpacing: '-0.01em' }],
-      },
-      spacing: {
-        '18': '4.5rem',
-        '22': '5.5rem',
-      },
-      borderRadius: {
-        'sm': '4px',
-        DEFAULT: '8px',
-        'md': '12px',
-        'lg': '16px',
-        'xl': '24px',
-      },
+      borderRadius: { sm: '6px', DEFAULT: '10px', md: '14px', lg: '20px', xl: '28px', '2xl': '36px' },
       boxShadow: {
-        'lift':    '0 4px 24px rgba(14,22,40,0.12)',
-        'deep':    '0 8px 48px rgba(14,22,40,0.18)',
-        'glow':    '0 0 0 3px rgba(201,137,58,0.25)',
-        'inset':   'inset 0 1px 3px rgba(14,22,40,0.08)',
-      },
-      backgroundImage: {
-        'paper-texture': "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E\")",
+        card:   '0 2px 16px rgba(13,61,58,0.08), 0 0 0 1px rgba(13,61,58,0.06)',
+        lift:   '0 8px 32px rgba(13,61,58,0.14), 0 0 0 1px rgba(13,61,58,0.06)',
+        deep:   '0 20px 60px rgba(13,61,58,0.20)',
+        glow:   '0 0 0 3px rgba(232,135,58,0.30)',
+        'inner-teal': 'inset 0 1px 3px rgba(13,61,58,0.12)',
       },
       animation: {
-        'fade-up':    'fadeUp 0.5s ease forwards',
-        'fade-in':    'fadeIn 0.4s ease forwards',
-        'slide-in':   'slideIn 0.3s ease forwards',
-        'pulse-slow': 'pulse 3s ease-in-out infinite',
-        'shimmer':    'shimmer 1.8s ease-in-out infinite',
-        'dot-bounce': 'dotBounce 1.2s ease-in-out infinite',
+        'fade-up':   'fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) forwards',
+        'fade-in':   'fadeIn 0.4s ease forwards',
+        'scale-in':  'scaleIn 0.35s cubic-bezier(0.16,1,0.3,1) forwards',
+        'slide-r':   'slideR 0.35s cubic-bezier(0.16,1,0.3,1) forwards',
+        'ink-drop':  'inkDrop 0.5s cubic-bezier(0.16,1,0.3,1) forwards',
+        'shimmer':   'shimmer 2s ease-in-out infinite',
+        'breathe':   'breathe 3s ease-in-out infinite',
+        'dot1':      'dot 1.4s ease-in-out infinite',
+        'dot2':      'dot 1.4s ease-in-out 0.2s infinite',
+        'dot3':      'dot 1.4s ease-in-out 0.4s infinite',
+        'spin-slow': 'spin 3s linear infinite',
+        'pulse-ring':'pulseRing 2s cubic-bezier(0.16,1,0.3,1) infinite',
       },
       keyframes: {
-        fadeUp: {
-          '0%':   { opacity: '0', transform: 'translateY(16px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        fadeIn: {
-          '0%':   { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        slideIn: {
-          '0%':   { opacity: '0', transform: 'translateX(-12px)' },
-          '100%': { opacity: '1', transform: 'translateX(0)' },
-        },
-        shimmer: {
-          '0%':   { backgroundPosition: '-200% 0' },
-          '100%': { backgroundPosition: '200% 0' },
-        },
-        dotBounce: {
-          '0%, 80%, 100%': { transform: 'scale(0.6)', opacity: '0.4' },
-          '40%':           { transform: 'scale(1)',   opacity: '1'   },
-        },
+        fadeUp:    { from: { opacity: '0', transform: 'translateY(20px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+        fadeIn:    { from: { opacity: '0' }, to: { opacity: '1' } },
+        scaleIn:   { from: { opacity: '0', transform: 'scale(0.93)' }, to: { opacity: '1', transform: 'scale(1)' } },
+        slideR:    { from: { opacity: '0', transform: 'translateX(-16px)' }, to: { opacity: '1', transform: 'translateX(0)' } },
+        inkDrop:   { from: { opacity: '0', transform: 'scale(0.8) translateY(8px)' }, to: { opacity: '1', transform: 'scale(1) translateY(0)' } },
+        shimmer:   { '0%,100%': { opacity: '0.5' }, '50%': { opacity: '1' } },
+        breathe:   { '0%,100%': { transform: 'scale(1)' }, '50%': { transform: 'scale(1.015)' } },
+        dot:       { '0%,80%,100%': { transform: 'scale(0.5)', opacity: '0.3' }, '40%': { transform: 'scale(1)', opacity: '1' } },
+        pulseRing: { '0%': { transform: 'scale(1)', opacity: '0.6' }, '100%': { transform: 'scale(1.5)', opacity: '0' } },
       },
     },
   },

@@ -1,41 +1,41 @@
-/**
- * FormBot API Client
- * All backend communication goes through here.
- */
-
 import axios from 'axios'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-const api = axios.create({
-  baseURL: API_BASE,
-  timeout: 60000, // 60s for extraction (can be slow)
-})
+const api = axios.create({ baseURL: BASE, timeout: 90000 })
 
-// ── Types ─────────────────────────────────────────────────────────────
+/* ── Types ──────────────────────────────────────────── */
 
-export interface BoundingBox {
-  xmin: number
-  ymin: number
-  xmax: number
-  ymax: number
-}
+export interface BBox { xmin: number; ymin: number; xmax: number; ymax: number }
 
 export interface FormField {
   field_name: string
-  field_type: 'text' | 'checkbox' | 'date' | 'signature' | 'radio' | 'select' | 'number' | 'email'
+  field_type: 'text'|'checkbox'|'date'|'signature'|'radio'|'select'|'number'|'email'|'textarea'
   semantic_label: string
   question_template: string
   description: string
   is_required: boolean
   data_type: string
-  bounding_box: BoundingBox
+  validation_rules: Record<string,any>
+  bounding_box: BBox
+  acro_field_name?: string
+  options?: string[]
+  /** Optional: font size for overlay/fill (e.g. 10–24). */
+  font_size?: number
+  /** Optional: font style for overlay ('normal' | 'italic' | 'bold'). */
+  font_style?: string
+  /** Optional: text color for overlay (e.g. '#0D3D3A'). */
+  font_color?: string
+  /** Optional: horizontal alignment inside bbox ('left' | 'center' | 'right'). */
+  text_align_h?: 'left' | 'center' | 'right'
+  /** Optional: vertical alignment inside bbox ('top' | 'middle' | 'bottom'). */
+  text_align_v?: 'top' | 'middle' | 'bottom'
 }
 
 export interface UploadResult {
   form_id: string
   form_title: string
-  source_type: 'acroform' | 'scanned_image' | 'image_pdf'
+  source_type: 'acroform'|'scanned_image'|'image_pdf'
   page_count: number
   field_count: number
   fields: FormField[]
@@ -43,25 +43,6 @@ export interface UploadResult {
   preview_image: string | null
   chat_link: string
   whatsapp_link: string
-}
-
-export interface Session {
-  session_id: string
-  form_id: string
-  status: 'active' | 'completed' | 'abandoned'
-  collected: Record<string, string | boolean>
-  progress_pct: number
-  filled_fields: number
-  total_fields: number
-  created_at: string
-}
-
-export interface ChatResponse {
-  reply: string
-  extracted: Record<string, string | boolean>
-  is_complete: boolean
-  progress: number
-  collected: Record<string, string | boolean>
 }
 
 export interface AgentForm {
@@ -75,98 +56,91 @@ export interface AgentForm {
   completed_count: number
 }
 
-// ── API Methods ───────────────────────────────────────────────────────
+export interface Session {
+  session_id: string
+  form_id: string
+  status: 'active'|'completed'|'filled'|'abandoned'
+  collected: Record<string, any>
+  progress_pct: number
+  filled_fields: number
+  total_fields: number
+  created_at: string
+  chat_history?: any[]
+}
+
+export interface ChatResponse {
+  reply: string
+  extracted: Record<string, any>
+  is_complete: boolean
+  progress: number
+  collected: Record<string, any>
+}
+
+/* ── Form API ────────────────────────────────────────── */
 
 export const formAPI = {
-
-  /** Upload form PDF or image → extract fields */
-  async uploadForm(file: File, onProgress?: (pct: number) => void): Promise<UploadResult> {
-    const formData = new FormData()
-    formData.append('file', file)
-
-    const res = await api.post('/api/forms/upload', formData, {
+  async upload(file: File, onProgress?: (p: number) => void): Promise<UploadResult> {
+    const fd = new FormData(); fd.append('file', file)
+    const res = await api.post('/api/forms/upload', fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      onUploadProgress: (evt) => {
-        if (onProgress && evt.total) {
-          onProgress(Math.round((evt.loaded / evt.total) * 100))
-        }
-      },
+      onUploadProgress: e => onProgress && e.total && onProgress(Math.round(e.loaded / e.total * 100)),
     })
     return res.data
   },
 
-  /** Get form schema by ID */
-  async getForm(formId: string) {
-    const res = await api.get(`/api/forms/${formId}`)
-    return res.data
+  async get(formId: string) { return (await api.get(`/api/forms/${formId}`)).data },
+
+  async update(formId: string, fields: FormField[], title: string) {
+    return (await api.patch(`/api/forms/${formId}`, { fields, form_title: title })).data
   },
 
-  /** Get preview image for form */
-  async getFormPreview(formId: string): Promise<string> {
-    const res = await api.get(`/api/forms/${formId}/preview`)
-    return res.data.preview_image
+  async list(): Promise<AgentForm[]> { return (await api.get('/api/agent/forms')).data.forms },
+
+  async sessions(formId: string): Promise<Session[]> {
+    return (await api.get(`/api/forms/${formId}/sessions`)).data.sessions
   },
 
-  /** List all agent's forms */
-  async listForms(): Promise<AgentForm[]> {
-    const res = await api.get('/api/agent/forms')
-    return res.data.forms
+  async preview(formId: string): Promise<string> {
+    return (await api.get(`/api/forms/${formId}/preview`)).data.preview_image
   },
 
-  /** Get sessions for a specific form */
-  async getFormSessions(formId: string) {
-    const res = await api.get(`/api/forms/${formId}/sessions`)
-    return res.data.sessions
+  async sampleValues(formId: string, fields?: FormField[]): Promise<Record<string, string>> {
+    const res = await api.post(`/api/forms/${formId}/sample-values`, fields ? { fields } : {})
+    return res.data.sample_values ?? {}
   },
 }
+
+/* ── Session API ─────────────────────────────────────── */
 
 export const sessionAPI = {
-
-  /** Create a new chat session for a form */
-  async create(formId: string): Promise<{ session_id: string; form_title: string; field_count: number }> {
-    const res = await api.post('/api/sessions/create', { form_id: formId })
-    return res.data
+  async create(formId: string) {
+    return (await api.post('/api/sessions/create', { form_id: formId })).data
   },
-
-  /** Get session state */
   async get(sessionId: string): Promise<Session> {
-    const res = await api.get(`/api/sessions/${sessionId}`)
-    return res.data
+    return (await api.get(`/api/sessions/${sessionId}`)).data
   },
 }
+
+/* ── Chat API ────────────────────────────────────────── */
 
 export const chatAPI = {
-
-  /** Send a message and get bot reply */
-  async send(sessionId: string, message: string, isVoice = false): Promise<ChatResponse> {
-    const res = await api.post('/api/chat', {
-      session_id: sessionId,
-      message,
-      is_voice: isVoice,
-    })
-    return res.data
+  async send(sessionId: string, message: string, lang = 'en'): Promise<ChatResponse> {
+    return (await api.post('/api/chat', { session_id: sessionId, message, lang })).data
+  },
+  async opening(sessionId: string, lang = 'en'): Promise<{ message: string }> {
+    return (await api.post('/api/chat/open', { session_id: sessionId, lang })).data
   },
 }
 
-export const fillbackAPI = {
+/* ── Fillback API ────────────────────────────────────── */
 
-  /** Fill form with collected data, download PDF */
+export const fillAPI = {
   async fill(sessionId: string): Promise<Blob> {
-    const res = await api.post(
-      `/api/sessions/${sessionId}/fill`,
-      {},
-      { responseType: 'blob' }
-    )
-    return res.data
+    return (await api.post(`/api/sessions/${sessionId}/fill`, {}, { responseType: 'blob' })).data
   },
-
-  /** Trigger download of filled PDF */
-  downloadPDF(blob: Blob, filename: string) {
+  download(blob: Blob, name = 'vaarta-filled.pdf') {
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    a.click()
+    Object.assign(document.createElement('a'), { href: url, download: name }).click()
     URL.revokeObjectURL(url)
   },
 }

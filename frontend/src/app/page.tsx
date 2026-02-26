@@ -1,9 +1,8 @@
 'use client'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-
-export default function Home() {
-  const router = useRouter()
-  useEffect(() => { router.replace('/agent') }, [router])
+export default function Root() {
+  const r = useRouter()
+  useEffect(() => r.replace('/agent'), [r])
   return null
 }
