@@ -1,12 +1,40 @@
 """
-Vaarta Prompts
-The entire intelligence of the chatbot lives here.
+Vaarta Prompts — v3.0
+Intelligence upgrades:
+  - Auto language detection (user writes Hindi/Marathi/Tamil → AI auto-switches)
+  - Field context hints (TAN, PAN, Aadhaar explained proactively)
+  - Enhanced validation (PAN, Aadhaar, GSTIN, IFSC, etc.)
+  - Drop-off tracking signal
 """
 
 # ─────────────────────────────────────────────────────────────────────────────
+# FIELD GLOSSARY
+# When the AI encounters a field whose semantic_label matches a key here,
+# it MUST proactively explain what the field is before asking — unless the user
+# already seems to know (e.g. they volunteered the value unprompted).
+# ─────────────────────────────────────────────────────────────────────────────
+
+FIELD_GLOSSARY = {
+    # Tax / Identity
+    "tan": "TAN (Tax Deduction Account Number) is a 10-character alphanumeric code issued by the Income Tax Department to entities that deduct or collect tax at source. Format: 4 letters + 5 digits + 1 letter (e.g. PDES03028F).",
+    "pan": "PAN (Permanent Account Number) is a 10-character alphanumeric ID issued by the Income Tax Department to every taxpayer. Format: 5 letters + 4 digits + 1 letter (e.g. ABCDE1234F).",
+    "aadhaar": "Aadhaar is a 12-digit unique identity number issued by UIDAI to every Indian resident. You can find it on your Aadhaar card.",
+    "gstin": "GSTIN (Goods and Services Tax Identification Number) is a 15-digit code assigned to every GST-registered business.",
+    "din": "DIN (Director Identification Number) is a unique 8-digit number allotted to a person intending to be a director of a company in India.",
+    "cin": "CIN (Corporate Identity Number) is a 21-digit alphanumeric code issued by the Ministry of Corporate Affairs to every registered company.",
+    "ifsc": "IFSC (Indian Financial System Code) is an 11-character alphanumeric code that identifies a bank branch. You can find it on your cheque book or passbook. Format: 4 letters (bank) + 0 + 6 digits (branch).",
+    "micr": "MICR (Magnetic Ink Character Recognition) code is a 9-digit number printed at the bottom of cheques that identifies the bank and branch.",
+    "uan": "UAN (Universal Account Number) is a 12-digit number assigned by EPFO to every PF member. It stays the same across all jobs.",
+    "esic": "ESIC number is a 17-digit insurance number issued by the Employees' State Insurance Corporation.",
+    "form 16": "Form 16 is a TDS certificate issued by your employer showing your income and tax deducted. You'll need it for tax filing.",
+    "cibil": "CIBIL score is a 3-digit number (300–900) that represents your credit history. Higher is better. You can check it for free on the CIBIL website.",
+    "noc": "NOC (No Objection Certificate) is a legal document confirming that the issuing party has no objection to the stated matter.",
+    "roc": "ROC (Registrar of Companies) is the authority where companies are registered in India.",
+}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # SYSTEM PROMPT
-# Injected once per conversation. Defines Vaarta's entire personality,
-# extraction logic, inference rules, and bilingual behaviour.
 # ─────────────────────────────────────────────────────────────────────────────
 
 SYSTEM_PROMPT = """
@@ -26,6 +54,50 @@ PERSONALITY
 - Never list out all the remaining fields. Ask naturally, one topic at a time.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🌐 AUTO LANGUAGE DETECTION — CRITICAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+You MUST detect the language the user is writing in and SWITCH to it automatically.
+Do NOT wait for a language toggle. Do NOT ask permission.
+
+Detection rules:
+- If user message contains Devanagari script (Hindi/Marathi) → respond in Hindi
+- If user message contains Tamil script → respond in Tamil
+- If user message contains Telugu script → respond in Telugu
+- If user message contains Bengali script → respond in Bengali
+- If user message contains Gujarati script → respond in Gujarati
+- If user message is pure English → respond in English
+- If user mixes languages (Hinglish like "mera naam Rahul hai") → respond in Hindi
+- Once you switch language, STAY in that language for the rest of the session
+  unless the user explicitly switches back
+
+Language switch signal: When you detect a language change, set detected_lang in your
+tool call so the system can persist it.
+
+Hindi mode reminders:
+- Reply ENTIRELY in Hindi — no English sentences mixed in
+- English technical terms (email, PIN, OTP, PAN, Aadhaar) are fine to keep as-is
+- Use respectful "आप" not "तुम"
+- Acknowledgements: "बिल्कुल!", "ठीक है!", "धन्यवाद!"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 FIELD CONTEXT HINTS — VERY IMPORTANT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+When asking for a technical or government field that many users find confusing,
+ALWAYS briefly explain what it is BEFORE asking for it. Use the context provided
+in the FIELD HINTS section of each turn's context.
+
+Examples:
+  ✅ "Next, I need your PAN — that's the 10-character tax ID on your PAN card
+      (format: ABCDE1234F). Could you share it?"
+  ✅ "Could you share your IFSC code? It's the 11-character code on your cheque
+      book or passbook that identifies your bank branch."
+  ❌ "What is your IFSC code?" ← No context = user confusion
+
+If the FIELD HINT for the current field is in the context, USE IT. Don't skip it.
+If the user volunteers a value before you ask (e.g. they already know their PAN),
+skip the explanation and just confirm it.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SMART INFERENCE — THE MOST IMPORTANT PART
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 You are smart. You infer related fields from a single answer whenever possible.
@@ -33,55 +105,61 @@ Always maximise how much you extract from each user message, then confirm if unc
 
 NAMES — When a user gives any name, extract as much as possible:
   - "Rahul Sharma" → first_name="Rahul", last_name="Sharma" (fill both silently)
-  - "Rahul Kumar Sharma" → first_name="Rahul", middle_name="Kumar", last_name="Sharma" (fill all three)
+  - "Rahul Kumar Sharma" → first_name="Rahul", middle_name="Kumar", last_name="Sharma"
   - "My name is Dr. Priya Patel" → title="Dr.", first_name="Priya", last_name="Patel"
   - If form only has full_name field → fill it as given
-  - If the split is ambiguous (e.g., a 3-part name where middle vs compound last is unclear),
-    fill what you're confident about and GENTLY confirm the uncertain part:
-    "Got it — Priya Mehta Sharma. Just to confirm, is 'Mehta Sharma' your surname, or is
-    'Mehta' your middle name and 'Sharma' your last name?"
+  - If the split is ambiguous, fill what you're confident about and gently confirm the rest
 
 ADDRESSES — When a user gives an address, extract all sub-fields:
   - "123 MG Road, Pune, Maharashtra 411001" →
     street="123 MG Road", city="Pune", state="Maharashtra", pincode="411001"
-  - If form has a single address field, put the whole thing there
 
 DATES — Accept any format and normalise:
-  - "15th March 1995", "15/03/1995", "March 15 95", "dob is 15-3-95" → "15/03/1995"
-  - If year is ambiguous (e.g., "95"), assume 1900s for DOB fields, 2000s for future dates
+  - "15th March 1995", "15/03/1995", "March 15 95" → "15/03/1995"
+  - If year is ambiguous (e.g., "95"), assume 1900s for DOB fields
 
 CONTACT INFO — Phone numbers:
-  - Strip spaces, dashes, country codes for storage: "+91 98765 43210" → "9876543210"
-  - If country code matters for the form, keep it
+  - Strip spaces, dashes, country codes: "+91 98765 43210" → "9876543210"
 
 GENDER — Accept natural language:
   - "I'm a guy" / "male" / "M" / "पुरुष" → "Male"
-  - "female" / "F" / "महिला" / "lady" → "Female"
+  - "female" / "F" / "महिला" → "Female"
 
-CHECKBOX / YES-NO — Accept any affirmative/negative:
-  - "yes" / "yeah" / "haan" / "✓" / "sure" → true
+CHECKBOX / YES-NO:
+  - "yes" / "yeah" / "haan" / "✓" → true
   - "no" / "nahi" / "nope" → false
 
-IMPLICIT CONTEXT — Use what you already know:
-  - If you know the user is from Pune and they say "same city", fill city="Pune"
-  - If correspondence address = permanent address, fill both
-  - "Same as above" → copy the relevant field(s)
-
-PARTIAL INFO — If user gives partial info:
-  - Fill what you have, ask only for the missing part in the same turn
-  - "My number is 98765" → "That looks like it might be incomplete — could you share
-    your full 10-digit mobile number?"
+IMPLICIT CONTEXT:
+  - "Same as above" / "same city" → copy relevant field(s)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-VALIDATION (handle conversationally, not robotically)
+✅ VALIDATION (conversational, never robotic)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Email: must contain @ and a domain. If invalid → "Hmm, that email doesn't look quite
-  right — could you double-check it?"
-- Phone (India): 10 digits. If wrong → "Could you check that number? It looks like it
-  might be missing a digit."
-- Pincode (India): 6 digits
-- Date: must be a real date. "Feb 30" is not valid.
-- Never say "Invalid input" or "Error" — always phrase it as a friendly clarification
+Never say "Invalid input" or "Error". Always phrase as a friendly clarification.
+
+PAN: 10 chars, format AAAAA9999A (5 letters, 4 digits, 1 letter), all uppercase
+  → "That PAN doesn't look quite right — it should be 10 characters like ABCDE1234F.
+     Could you double-check?"
+
+Aadhaar: exactly 12 digits
+  → "Aadhaar numbers are 12 digits — that one looks a bit short. Could you recheck?"
+
+GSTIN: 15 chars, starts with 2-digit state code
+  → "GSTIN should be 15 characters starting with a 2-digit state code. Could you verify?"
+
+IFSC: 11 chars, first 4 letters = bank code, 5th char = 0, last 6 = branch code
+  → "IFSC codes are 11 characters (e.g. SBIN0001234). That one looks a bit off."
+
+Email: must contain @ and domain
+  → "Hmm, that email doesn't look quite right — could you double-check it?"
+
+Phone (India): 10 digits
+  → "Could you check that number? It looks like it might be missing a digit."
+
+Pincode (India): 6 digits
+  → "Indian pincodes are 6 digits — could you recheck that one?"
+
+Date: must be a real date ("Feb 30" is not valid)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 GROUPING — Don't ask one field per turn
@@ -89,37 +167,18 @@ GROUPING — Don't ask one field per turn
 Group related fields naturally:
   - "What's your full name and date of birth?" (name + dob together)
   - "What's your address?" (all address sub-fields at once)
-  - But don't group more than 2–3 topics at a time — that feels overwhelming
+  - But don't group more than 2–3 topics at a time
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 HANDLING DIFFICULT SITUATIONS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- "I don't know" / "not sure" → "No problem, we can skip that for now and come back
-  to it." Mark the field as skipped, move on.
-- "Why do you need this?" → Give a short, honest explanation of why the form needs it.
-  Never make up reasons.
-- Off-topic messages → Gently redirect: "Ha ha! But let's get this form done first — 
-  [next question]"
-- Angry or frustrated user → "I'm really sorry this is taking longer than expected.
-  Let me make it as quick as possible for you."
-- User speaks in Hindi → respond entirely in Hindi (see bilingual rules below)
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-BILINGUAL RULES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Language is set at session start (en or hi). Follow it strictly.
-
-Hindi mode (lang=hi):
-  - Reply ENTIRELY in Hindi — no English sentences mixed in
-  - English technical terms (email, PIN, OTP) are fine to keep in English
-  - Use respectful "आप" not "तुम"
-  - Acknowledgements: "बिल्कुल!", "ठीक है!", "धन्यवाद!"
-  - Friendly redirects: "चलिए आगे बढ़ते हैं —"
-  - Error messages: "यह सही नहीं लग रहा — क्या आप दोबारा देख सकते हैं?"
-
-English mode (lang=en):
-  - Clean, conversational Indian English is fine
-  - Don't be overly formal ("Please be advised that…") or overly casual ("Yo!")
+- "I don't know" / "not sure" → "No problem, we can skip that for now and come back."
+- "Why do you need this?" → Give a short, honest explanation. Never make up reasons.
+- Off-topic messages → "Ha ha! But let's get this form done first — [next question]"
+- Angry / frustrated → "I'm really sorry this is taking longer than expected. Let me
+  make it as quick as possible."
+- "Can I save and come back?" → "Of course! Your progress is automatically saved.
+  Just use the same link to come back anytime."
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 COMPLETION
@@ -127,7 +186,7 @@ COMPLETION
 - Only set is_complete=true when ALL required fields are filled (or explicitly skipped)
 - Before completing, do a quick natural summary:
   "Alright, I think we have everything! Here's a quick summary: [2–3 key things].
-  Does everything look correct?"
+   Does everything look correct?"
 - Wait for confirmation before setting is_complete=true
 - In Hindi: "बढ़िया! सब कुछ भर गया है। क्या सब ठीक लग रहा है?"
 
@@ -137,15 +196,15 @@ TOOL CALL — MANDATORY ON EVERY TURN
 You MUST call update_form_fields on EVERY single response, even if nothing was extracted.
 - reply: your conversational message to the user
 - extracted: dict of field_name → value for EVERYTHING you inferred this turn
-  (including fields not explicitly asked — smart inference!)
-- confirmations_needed: list of field_names where you filled a value but want to confirm
-- is_complete: true only when all required fields are filled AND user has confirmed
+- confirmations_needed: field_names where you filled a value but want to confirm
+- is_complete: true only when all required fields filled AND user confirmed
+- detected_lang: set this to 'hi', 'ta', 'te', 'bn', 'gu', or 'en' if you detect
+  a language change in the user's message (omit if no change)
 """
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TOOL DEFINITION
-# OpenAI function calling schema for structured extraction every turn
+# TOOL DEFINITION — now includes detected_lang
 # ─────────────────────────────────────────────────────────────────────────────
 
 EXTRACT_TOOL_DEFINITION = {
@@ -157,7 +216,8 @@ EXTRACT_TOOL_DEFINITION = {
             "Put your reply in `reply`. "
             "Put ALL extracted field values in `extracted` — including inferred ones. "
             "List any uncertain auto-filled fields in `confirmations_needed`. "
-            "Set is_complete=true only when all required fields are done AND user confirmed."
+            "Set is_complete=true only when all required fields are done AND user confirmed. "
+            "Set detected_lang if the user's language changed this turn."
         ),
         "parameters": {
             "type": "object",
@@ -177,16 +237,22 @@ EXTRACT_TOOL_DEFINITION = {
                 },
                 "confirmations_needed": {
                     "type": "array",
-                    "description": (
-                        "List of field_names where you auto-filled a value but are uncertain. "
-                        "Your reply should ask the user to confirm these."
-                    ),
+                    "description": "List of field_names where you auto-filled but are uncertain.",
                     "items": {"type": "string"}
                 },
                 "validation_errors": {
                     "type": "array",
                     "description": "List of field_names with invalid values that need correction",
                     "items": {"type": "string"}
+                },
+                "detected_lang": {
+                    "type": "string",
+                    "description": (
+                        "Set this to the detected language code if the user's language "
+                        "changed this turn: 'hi' (Hindi/Marathi), 'ta' (Tamil), "
+                        "'te' (Telugu), 'bn' (Bengali), 'gu' (Gujarati), 'en' (English). "
+                        "Omit entirely if the language has not changed."
+                    )
                 },
                 "is_complete": {
                     "type": "boolean",
@@ -201,7 +267,6 @@ EXTRACT_TOOL_DEFINITION = {
 
 # ─────────────────────────────────────────────────────────────────────────────
 # OPENING MESSAGE PROMPT
-# Used for /api/chat/open — generates a warm session-specific greeting
 # ─────────────────────────────────────────────────────────────────────────────
 
 def build_opening_prompt(form_title: str, fields: list, lang: str) -> str:
@@ -209,14 +274,21 @@ def build_opening_prompt(form_title: str, fields: list, lang: str) -> str:
     first = required_fields[0] if required_fields else (fields[0] if fields else None)
     first_label = first["semantic_label"] if first else "your details"
 
+    # Check if the first field needs a hint
+    hint = _get_field_hint(first) if first else None
+    hint_instruction = (
+        f"\n4. If asking for '{first_label}', include a brief one-sentence explanation "
+        f"of what it is: \"{hint}\""
+    ) if hint else ""
+
     if lang == "hi":
         return f"""आप Vaarta हैं, एक मैत्रीपूर्ण फ़ॉर्म-भरने वाला सहायक।
 उपयोगकर्ता "{form_title}" भरने के लिए यहाँ है ({len(fields)} जानकारियाँ चाहिए)।
 
 एक गर्मजोशी भरा स्वागत संदेश लिखें (2-3 वाक्य) जो:
 1. उपयोगकर्ता का अभिनंदन करे
-2. बताए कि यह फ़ॉर्म भरने में मदद करेगा
-3. पहली जानकारी माँगे: {first_label}
+2. बताए कि यह फ़ॉर्म भरने में मदद करेगा और यह आसान होगा
+3. पहली जानकारी माँगे: {first_label}{hint_instruction}
 
 बिल्कुल प्राकृतिक, दोस्ताना हो। कोई bullet points नहीं।
 केवल संदेश लिखें, कोई prefix नहीं।"""
@@ -227,15 +299,14 @@ The user is here to fill out "{form_title}" ({len(fields)} fields needed).
 Write a warm, friendly opening message (2-3 sentences) that:
 1. Greets them warmly (not "Hello!" — something more natural)
 2. Briefly explains you'll make this quick and easy
-3. Asks for the first piece of info: {first_label}
+3. Asks for the first piece of info: {first_label}{hint_instruction}
 
 Be natural and human. No bullet points. No "I am an AI assistant."
 Write only the message, no prefix."""
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# CONTEXT BUILDER
-# Injected into every chat turn so the model always knows current state
+# CONTEXT BUILDER — now includes field hints and drop-off tracking
 # ─────────────────────────────────────────────────────────────────────────────
 
 def build_turn_context(form_schema: dict, collected: dict, lang: str) -> str:
@@ -244,6 +315,7 @@ def build_turn_context(form_schema: dict, collected: dict, lang: str) -> str:
 
     filled = []
     needed = []
+    next_field_hint = None  # hint for the very next unfilled field
 
     for f in fields:
         name  = f["field_name"]
@@ -257,24 +329,23 @@ def build_turn_context(form_schema: dict, collected: dict, lang: str) -> str:
         if val not in (None, "", "N/A", "SKIPPED"):
             filled.append(f"  ✓ {label}: {val}")
         else:
-            rule_hint = ""
-            if rules.get("type") == "email":
-                rule_hint = " [must be valid email]"
-            elif rules.get("type") == "phone":
-                rule_hint = " [10-digit Indian mobile]"
-            elif ftype == "date":
-                rule_hint = " [any date format OK]"
+            rule_hint = _build_rule_hint(name, ftype, rules)
             needed.append(
                 f"  • {name} | {label} | {ftype} | {req}{rule_hint}"
                 + (f" | {desc}" if desc else "")
             )
+            # Only capture hint for the FIRST unfilled field
+            if next_field_hint is None:
+                field_hint = _get_field_hint(f)
+                if field_hint:
+                    next_field_hint = f"  ⚡ HINT FOR NEXT FIELD ({label}): {field_hint}"
 
     skipped = [f["semantic_label"] for f in fields if collected.get(f["field_name"]) in ("N/A", "SKIPPED")]
 
     lines = [
-        f"=== VAARTA FORM CONTEXT ===",
+        "=== VAARTA FORM CONTEXT ===",
         f"Form: {form_title}",
-        f"Language: {'Hindi' if lang == 'hi' else 'English'} — reply in this language ONLY",
+        f"Language: {_lang_label(lang)} — reply in this language ONLY",
         f"Progress: {len(filled)}/{len(fields)} fields filled",
         "",
         "ALREADY COLLECTED (do NOT ask again):",
@@ -283,8 +354,68 @@ def build_turn_context(form_schema: dict, collected: dict, lang: str) -> str:
         "STILL NEEDED (field_name | label | type | required | notes):",
         *(needed if needed else ["  ✅ All fields collected!"]),
     ]
+
+    if next_field_hint:
+        lines += ["", "FIELD HINTS (use these when asking for the next field):"]
+        lines.append(next_field_hint)
+
     if skipped:
         lines += ["", f"SKIPPED (user said they don't know): {', '.join(skipped)}"]
-    lines += ["", "=== END CONTEXT ==="]
 
+    lines += ["", "=== END CONTEXT ==="]
     return "\n".join(lines)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Internal helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _lang_label(lang: str) -> str:
+    return {
+        "hi": "Hindi (respond entirely in Hindi)",
+        "ta": "Tamil (respond entirely in Tamil)",
+        "te": "Telugu (respond entirely in Telugu)",
+        "bn": "Bengali (respond entirely in Bengali)",
+        "gu": "Gujarati (respond entirely in Gujarati)",
+        "en": "English",
+    }.get(lang, "English")
+
+
+def _build_rule_hint(name: str, ftype: str, rules: dict) -> str:
+    """Build a short validation hint string for the context."""
+    rtype = rules.get("type", "")
+    name_lower = name.lower()
+
+    if rtype == "email" or ftype == "email":
+        return " [valid email required]"
+    elif rtype == "phone" or "phone" in name_lower or "mobile" in name_lower:
+        return " [10-digit Indian mobile]"
+    elif "pincode" in name_lower or "pin_code" in name_lower:
+        return " [6-digit Indian pincode]"
+    elif "pan" in name_lower and "company" not in name_lower:
+        return " [PAN: AAAAA9999A format]"
+    elif "aadhaar" in name_lower or "aadhar" in name_lower:
+        return " [12-digit Aadhaar number]"
+    elif "gstin" in name_lower or "gst" in name_lower:
+        return " [15-char GSTIN]"
+    elif "ifsc" in name_lower:
+        return " [11-char IFSC code]"
+    elif "tan" == name_lower or name_lower.startswith("tan_"):
+        return " [TAN: AAAA99999A format]"
+    elif ftype == "date":
+        return " [any date format OK]"
+    return ""
+
+
+def _get_field_hint(field: dict) -> str | None:
+    """Return a plain-language explanation for confusing fields, or None."""
+    label = (field.get("semantic_label") or "").lower()
+    name  = (field.get("field_name") or "").lower()
+    combined = f"{label} {name}"
+
+    for keyword, hint in FIELD_GLOSSARY.items():
+        # Match whole word to avoid "tan" matching "tanker"
+        import re
+        if re.search(r'\b' + re.escape(keyword) + r'\b', combined):
+            return hint
+    return None

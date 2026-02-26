@@ -6,8 +6,8 @@ import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import {
   ArrowLeft, Download, Share2, Edit2, RefreshCw,
-  CheckCircle, Circle, Clock, Users, TrendingUp,
-  FileText, Copy, Check, Link2, MessageSquare
+  CheckCircle, Circle, Users, TrendingUp,
+  FileText, Copy, Check, Link2, MessageSquare, BarChart3
 } from 'lucide-react'
 import AgentNav from '@/components/shared/AgentNav'
 import ShareModal from '@/components/shared/ShareModal'
@@ -121,6 +121,9 @@ export default function FormDetailPage() {
             </button>
             <button onClick={() => router.push(`/agent/form/${formId}/edit`)} className="btn-secondary btn-sm">
               <Edit2 size={14} /> Edit fields
+            </button>
+            <button onClick={() => router.push(`/agent/form/${formId}/analytics`)} className="btn-ghost btn-sm">
+              <BarChart3 size={14} /> Analytics
             </button>
             <button onClick={() => setShareOpen(true)} className="btn-primary btn-sm">
               <Share2 size={14} /> Share

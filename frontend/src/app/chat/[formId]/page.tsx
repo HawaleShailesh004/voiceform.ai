@@ -213,6 +213,7 @@ export default function ChatPage() {
 
     try {
       const res: ChatResponse = await chatAPI.send(sessionId, text.trim(), lang)
+      if (res.lang && res.lang !== lang) setLang(res.lang as Lang)
       const botMsg: Message = { id: (Date.now()+1).toString(), role: 'bot', text: res.reply, ts: new Date() }
       setMsgs(p => [...p, botMsg])
       setProgress(res.progress)
@@ -267,6 +268,7 @@ export default function ChatPage() {
 
   const progressLabel = lang === 'hi' ? `${filled} में से ${totalFields}` : `${filled} of ${totalFields}`
   const inputPlaceholder = lang === 'hi' ? 'अपना जवाब टाइप करें…' : 'Type your answer…'
+  const resumeLink = sessionId ? `${typeof window !== 'undefined' ? window.location.origin : ''}/chat/${formId}?session=${sessionId}` : ''
 
   return (
     <div className="min-h-screen bg-teal-woven flex flex-col" style={{ maxHeight: '100dvh' }}>
@@ -398,6 +400,15 @@ export default function ChatPage() {
             </button>
           </div>
 
+          {resumeLink && (
+            <button
+              type="button"
+              onClick={() => { navigator.clipboard.writeText(resumeLink); toast.success('Link copied!') }}
+              className="text-cream/30 text-[10px] underline font-body mt-2 block mx-auto hover:text-cream/50"
+            >
+              Save & continue later
+            </button>
+          )}
           <p className="text-center text-cream/20 text-[10px] font-body mt-2">
             Powered by Vaarta · Your data is secure
           </p>

@@ -85,11 +85,11 @@ export default function EditFormPage() {
         const sv = data.sample_values || {}
         setSampleValues(sv)
         if (Object.keys(sv).length > 0) setLivePreview(true)
-        // Use first field as "saved default" and init dropdown from it
-        const defSize = f[0]?.font_size ?? 14
-        const defStyle = f[0]?.font_style ?? 'normal'
-        const defH = (f[0]?.text_align_h ?? 'left') as 'left' | 'center' | 'right'
-        const defV = (f[0]?.text_align_v ?? 'top') as 'top' | 'middle' | 'bottom'
+        // Use first field as "saved default" and init global dropdown from it
+        const defSize = Number(f[0]?.font_size) || 14
+        const defStyle = (f[0]?.font_style as string) || 'normal'
+        const defH = ((f[0]?.text_align_h as string) || 'left') as 'left' | 'center' | 'right'
+        const defV = ((f[0]?.text_align_v as string) || 'top') as 'top' | 'middle' | 'bottom'
         if (f.length > 0) {
           setPreviewFontSize(defSize)
           setPreviewFontStyle(defStyle)
@@ -99,10 +99,10 @@ export default function EditFormPage() {
         // Clear font/style/align on fields that match default so preview uses global dropdown for them
         const normalized = f.map((field) => ({
           ...field,
-          font_size: field.font_size === defSize ? undefined : field.font_size,
-          font_style: field.font_style === defStyle ? undefined : field.font_style,
-          text_align_h: field.text_align_h === defH ? undefined : field.text_align_h,
-          text_align_v: field.text_align_v === defV ? undefined : field.text_align_v,
+          font_size: (Number(field.font_size) || 0) === defSize ? undefined : field.font_size,
+          font_style: (field.font_style || 'normal') === defStyle ? undefined : field.font_style,
+          text_align_h: (field.text_align_h || 'left') === defH ? undefined : field.text_align_h,
+          text_align_v: (field.text_align_v || 'top') === defV ? undefined : field.text_align_v,
         }))
         setFields(normalized)
         savedFields.current = normalized
