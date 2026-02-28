@@ -4,10 +4,6 @@
 
 > Turn any digital form into a conversation. Upload a form, share a link - users fill it by talking in Hindi or English, get the filled PDF on WhatsApp.
 
-![Vaarta](https://img.shields.io/badge/built%20with-Claude%20Vision%20%2B%20GPT--4o-blueviolet)
-![Stack](https://img.shields.io/badge/stack-Next.js%2014%20%2B%20FastAPI-teal)
-![License](https://img.shields.io/badge/license-MIT-green)
-
 ---
 
 ## What is Vaarta?
@@ -30,7 +26,7 @@ Vaarta has two sides:
 
 ## Demo
 
-| **Agent — upload & edit** | **User — fill by chat** |
+| **Agent - upload & edit** | **User - fill by chat** |
 |--------------------------|--------------------------|
 | Upload scanned form → Claude Vision extracts fields → drag-to-correct editor with live canvas preview | Open link → chat in Hindi/English → voice input → filled PDF on WhatsApp |
 
@@ -66,8 +62,8 @@ Vaarta has two sides:
 | **Frontend** | Next.js 14 (App Router), React 18, TypeScript |
 | **Styling** | Tailwind CSS, Framer Motion |
 | **Canvas preview** | HTML5 Canvas API (client-only) |
-| **AI — Extraction** | Anthropic Claude `claude-sonnet-4-20250514` (Vision) |
-| **AI — Chat** | OpenAI GPT-4o with tool-calling |
+| **AI - Extraction** | Anthropic Claude `claude-sonnet-4-20250514` (Vision) |
+| **AI - Chat** | OpenAI GPT-4o with tool-calling |
 | **Backend** | Python 3, FastAPI, Uvicorn |
 | **PDF** | PyMuPDF (fitz), ReportLab, Pillow |
 | **WhatsApp** | Twilio WhatsApp Business API |
@@ -302,9 +298,3 @@ MIT
 
 ---
 
-## Acknowledgements
-
-- [Anthropic](https://anthropic.com) - Claude Vision for form field extraction  
-- [OpenAI](https://openai.com) - GPT-4o for conversational chat engine  
-- [Twilio](https://twilio.com) - WhatsApp Business API for PDF delivery  
-- [PyMuPDF](https://pymupdf.readthedocs.io) - PDF processing and AcroForm fill
