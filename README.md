@@ -26,6 +26,8 @@ Vaarta has two sides:
 
 ## Demo
 
+**[Watch demo video](https://youtu.be/1w1uFwxw334?si=vV-T7IIbWedoQwie)** (YouTube)
+
 | **Agent - upload & edit** | **User - fill by chat** |
 |--------------------------|--------------------------|
 | Upload scanned form → Claude Vision extracts fields → drag-to-correct editor with live canvas preview | Open link → chat in Hindi/English → voice input → filled PDF on WhatsApp |
