@@ -185,6 +185,11 @@ export const formAPI = {
     return (await api.get(`/api/forms/${formId}/analytics`)).data
   },
 
+  async delete(formId: string): Promise<{ deleted: string }> {
+    const res = await api.delete(`/api/forms/${formId}`)
+    return res.data
+  },
+
   /** Re-run extraction on the stored original; returns updated fields and preview. */
   async reExtract(formId: string): Promise<{
     form_id: string

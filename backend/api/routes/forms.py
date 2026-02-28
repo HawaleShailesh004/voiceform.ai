@@ -166,6 +166,14 @@ async def get_form(form: Annotated[dict, Depends(require_form)]):
     return JSONResponse({k: v for k, v in form.items() if k != "raw_image_b64"})
 
 
+@router.delete("/{form_id}")
+async def delete_form(form_id: str, form: Annotated[dict, Depends(require_form)]):
+    ok = store.delete_form(form_id)
+    if not ok:
+        raise HTTPException(500, "Failed to delete form")
+    return JSONResponse({"deleted": form_id}, status_code=200)
+
+
 @router.get("/{form_id}/preview")
 async def get_form_preview(form: Annotated[dict, Depends(require_form)]):
     img = form.get("raw_image_b64")

@@ -19,10 +19,10 @@
       "validation_rules": {},
       "purpose": "Record examination date",
       "bounding_box": {
-        "xmin": 15,
-        "ymin": 186,
-        "xmax": 853,
-        "ymax": 218
+        "xmin": 77,
+        "ymin": 140,
+        "xmax": 915,
+        "ymax": 172
       },
       "acro_field_name": null,
       "options": null,

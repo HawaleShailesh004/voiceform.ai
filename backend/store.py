@@ -33,6 +33,10 @@ def list_forms() -> list[dict]:
     return _get_store().list_forms()
 
 
+def delete_form(form_id: str) -> bool:
+    return _get_store().delete_form(form_id)
+
+
 def update_form_fields(form_id: str, fields: list, title: str) -> bool:
     return _get_store().update_form_fields(form_id, fields, title)
 

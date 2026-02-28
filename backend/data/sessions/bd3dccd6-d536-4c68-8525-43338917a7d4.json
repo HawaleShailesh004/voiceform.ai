@@ -1,0 +1,35 @@
+{
+  "session_id": "bd3dccd6-d536-4c68-8525-43338917a7d4",
+  "form_id": "12a47bbf-3239-4aef-860c-bbacad9711ce",
+  "created_at": "2026-02-28T20:37:11.112402",
+  "status": "active",
+  "collected": {
+    "name": "Shailesh"
+  },
+  "chat_history": [
+    {
+      "role": "assistant",
+      "content": "Hey there! I’m here to help make filling out your Personal Information Form a breeze, so we’ll get through it in no time. Let’s get started with your name—what should I call you?"
+    },
+    {
+      "role": "user",
+      "content": "mera naam Shailesh hai"
+    },
+    {
+      "role": "assistant",
+      "content": "बिल्कुल! धन्यवाद, शैलेश। आपका पता क्या है?"
+    },
+    {
+      "role": "user",
+      "content": "नगर पालिका में रहता हूं"
+    },
+    {
+      "role": "assistant",
+      "content": "ठीक है, नगर पालिका में रहते हैं। क्या आप थोड़ा और विवरण दे सकते हैं, जैसे सड़क का नाम, शहर, राज्य, और पिनकोड?"
+    }
+  ],
+  "progress": 7,
+  "lang": "hi",
+  "last_asked_field": "address",
+  "updated_at": "2026-02-28T20:40:03.514909"
+}

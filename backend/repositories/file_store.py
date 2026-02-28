@@ -65,6 +65,32 @@ class FileStore:
                 forms.append(data)
         return forms
 
+    def delete_form(self, form_id: str) -> bool:
+        """Delete a form and all its data: form JSON, original file, sessions, filled PDFs, session files."""
+        form_path = self.forms_dir / f"{form_id}.json"
+        if not form_path.exists():
+            return False
+        with self._lock:
+            # Delete all sessions for this form (and their filled PDFs + session_files)
+            for p in list(self.sessions_dir.glob("*.json")):
+                data = self._read(p)
+                if data and data.get("form_id") == form_id:
+                    sid = p.stem
+                    self.filled_path(sid).unlink(missing_ok=True)
+                    session_files_dir = self.files_dir / sid
+                    if session_files_dir.exists():
+                        for f in session_files_dir.iterdir():
+                            if f.is_file():
+                                f.unlink(missing_ok=True)
+                        session_files_dir.rmdir()
+                    p.unlink(missing_ok=True)
+            # Delete original file(s)
+            for suffix in (".pdf", ".png", ".jpg", ".jpeg", ".webp", ".tiff"):
+                orig = self.originals_dir / f"{form_id}{suffix}"
+                orig.unlink(missing_ok=True)
+            form_path.unlink(missing_ok=True)
+        return True
+
     def update_form_fields(self, form_id: str, fields: list, title: str) -> bool:
         data = self.load_form(form_id)
         if not data:

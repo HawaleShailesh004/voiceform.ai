@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { FileText, Plus, ChevronRight, Inbox, TrendingUp, Users, CheckCircle, Activity } from 'lucide-react'
+import toast from 'react-hot-toast'
+import { FileText, Plus, ChevronRight, Inbox, Users, CheckCircle, Activity, Trash2 } from 'lucide-react'
 import AgentNav from '@/components/shared/AgentNav'
 import { formAPI, type AgentForm } from '@/lib/api'
 import clsx from 'clsx'
@@ -72,11 +73,19 @@ function SourcePill({ type }: { type: string }) {
 }
 
 /* ── Form card ─────────────────────────────────────── */
-function FormCard({ form, delay }: { form: AgentForm; delay: number }) {
+function FormCard({ form, delay, onDelete, isDeleting }: { form: AgentForm; delay: number; onDelete: (formId: string) => void; isDeleting?: boolean }) {
   const completion = form.session_count > 0
     ? Math.round((form.completed_count / form.session_count) * 100) : 0
   const hasActivity = form.session_count > 0
   const activeCount = form.session_count - form.completed_count
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (isDeleting) return
+    if (!confirm(`Delete "${form.form_title}"? This will remove the form and all its sessions and data. This cannot be undone.`)) return
+    onDelete(form.form_id)
+  }
 
   return (
     <motion.div
@@ -84,10 +93,10 @@ function FormCard({ form, delay }: { form: AgentForm; delay: number }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, type: 'spring', stiffness: 260, damping: 22 }}
     >
-      <Link href={`/agent/form/${form.form_id}`}>
-        <div className="card p-5 hover:shadow-lift transition-all duration-200 group cursor-pointer border border-teal/8 hover:border-teal/16">
-          {/* Top row */}
-          <div className="flex items-start gap-3 mb-4">
+      <div className="card p-5 hover:shadow-lift transition-all duration-200 group border border-teal/8 hover:border-teal/16 relative">
+        {/* Top row */}
+        <div className="flex items-start gap-3 mb-4">
+          <Link href={`/agent/form/${form.form_id}`} className="flex items-start gap-3 flex-1 min-w-0">
             <div className="w-10 h-10 rounded-lg bg-teal/7 border border-teal/10 flex items-center justify-center flex-shrink-0 group-hover:bg-teal group-hover:border-teal transition-all duration-200">
               <FileText size={16} className="text-teal group-hover:text-cream transition-colors duration-200" />
             </div>
@@ -97,12 +106,28 @@ function FormCard({ form, delay }: { form: AgentForm; delay: number }) {
               </h3>
               <p className="text-ink-faint text-[11px] font-body mt-0.5 truncate">{form.original_filename}</p>
             </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              {form.health_score && <GradeBadge grade={form.health_score.grade} />}
-              <ChevronRight size={14} className="text-ink-faint/50 group-hover:text-teal group-hover:translate-x-0.5 transition-all duration-150" />
-            </div>
+            <ChevronRight size={14} className="text-ink-faint/50 group-hover:text-teal group-hover:translate-x-0.5 transition-all duration-150 flex-shrink-0 mt-0.5" />
+          </Link>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {form.health_score && <GradeBadge grade={form.health_score.grade} />}
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="p-1.5 rounded-lg text-ink-faint hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Delete form"
+              aria-label="Delete form"
+            >
+              {isDeleting ? (
+                <span className="w-3.5 h-3.5 border-2 border-teal/30 border-t-teal rounded-full animate-spin block" />
+              ) : (
+                <Trash2 size={14} />
+              )}
+            </button>
           </div>
+        </div>
 
+        <Link href={`/agent/form/${form.form_id}`} className="block">
           {/* Stats row */}
           <div className="grid grid-cols-3 gap-2 mb-4">
             <div className="rounded-lg p-2.5 text-center" style={{ background: '#FAF6EF' }}>
@@ -150,8 +175,8 @@ function FormCard({ form, delay }: { form: AgentForm; delay: number }) {
               <p className="text-ink-faint text-[11px] font-body italic">Share the link to get started</p>
             </div>
           )}
-        </div>
-      </Link>
+        </Link>
+      </div>
     </motion.div>
   )
 }
@@ -210,10 +235,24 @@ function SkeletonCard() {
 export default function AgentDashboard() {
   const [forms, setForms] = useState<AgentForm[]>([])
   const [loading, setLoading] = useState(true)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     formAPI.list().then(setForms).catch(() => {}).finally(() => setLoading(false))
   }, [])
+
+  const handleDeleteForm = async (formId: string) => {
+    setDeletingId(formId)
+    try {
+      await formAPI.delete(formId)
+      setForms((prev) => prev.filter((f) => f.form_id !== formId))
+      toast.success('Form deleted')
+    } catch {
+      toast.error('Could not delete form')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   const totalSessions  = forms.reduce((a, f) => a + f.session_count, 0)
   const totalCompleted = forms.reduce((a, f) => a + f.completed_count, 0)
@@ -281,7 +320,15 @@ export default function AgentDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             {forms.length === 0
               ? <EmptyState />
-              : forms.map((f, i) => <FormCard key={f.form_id} form={f} delay={i * 0.06} />)
+              : forms.map((f, i) => (
+                  <FormCard
+                    key={f.form_id}
+                    form={f}
+                    delay={i * 0.06}
+                    onDelete={handleDeleteForm}
+                    isDeleting={deletingId === f.form_id}
+                  />
+                ))
             }
           </div>
         )}

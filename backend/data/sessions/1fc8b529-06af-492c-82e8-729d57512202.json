@@ -1,0 +1,150 @@
+{
+  "session_id": "1fc8b529-06af-492c-82e8-729d57512202",
+  "form_id": "b06b700a-3326-4a3f-acb6-55b49fc8b79e",
+  "created_at": "2026-02-28T20:02:45.262524",
+  "status": "active",
+  "collected": {
+    "date": "01/03/3926",
+    "name": "Shailesh Hawale",
+    "date_of_birth": "04/12/3904",
+    "height": "173 cm",
+    "weight": "85kg",
+    "diabetes": false,
+    "muscular_disease": false,
+    "mental_disorder": false,
+    "arthritis": false,
+    "serious_injuries": false,
+    "other_diseases": false,
+    "lung_disorders": false,
+    "cardiovascular_disease": false,
+    "physician_care": false,
+    "permanent_impairment": false,
+    "nervous_system_disorders": "No",
+    "general_appearance": "Good",
+    "right_ear": "Good",
+    "left_ear": "Good",
+    "disease_or_injury": "No"
+  },
+  "chat_history": [
+    {
+      "role": "assistant",
+      "content": "Hey there! I’m glad to have you here, and I promise we’ll get through this form quickly and smoothly together. Let's kick things off with the date, if you don't mind sharing that with me."
+    },
+    {
+      "role": "user",
+      "content": "01-03-2026"
+    },
+    {
+      "role": "assistant",
+      "content": "Great, I've got the date as 01-03-2026. Let's move on to your full name and date of birth next. Can you share those with me?"
+    },
+    {
+      "role": "user",
+      "content": "shailesh hawale,  04/12/2004"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks, Shailesh! I've noted down your name and date of birth. Next, could you please share your height and weight?"
+    },
+    {
+      "role": "user",
+      "content": "173 cm, 85kg"
+    },
+    {
+      "role": "assistant",
+      "content": "Got it, Shailesh! I've recorded your height as 173 cm and weight as 85 kg. Now, let's talk about your medical history. Have you had any history of diabetes or muscular diseases?"
+    },
+    {
+      "role": "user",
+      "content": "no"
+    },
+    {
+      "role": "assistant",
+      "content": "Alright, no history of diabetes or muscular diseases. Thank you for sharing! Next, could you let me know if there's any history of mental disorders or arthritis?"
+    },
+    {
+      "role": "user",
+      "content": "no"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for confirming, Shailesh! I'll note down that you have no history of mental disorders or arthritis. Let's move on to the next set of questions. Have you ever had any serious injuries or suffered from any other diseases?"
+    },
+    {
+      "role": "user",
+      "content": "no"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks, I've noted that you haven't had any serious injuries or other diseases. Moving on, do you have any lung disorders like asthma or any cardiovascular diseases?"
+    },
+    {
+      "role": "user",
+      "content": "no"
+    },
+    {
+      "role": "assistant",
+      "content": "Great, I've noted that you don't have any lung or cardiovascular diseases. Let's go on with the form. Are you currently under a physician's care or experiencing any permanent impairment from illness, disease, or injury?"
+    },
+    {
+      "role": "user",
+      "content": "no"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for sharing that, Shailesh! I've noted that you're not under a physician's care and have no permanent impairments."
+    },
+    {
+      "role": "user",
+      "content": "ok"
+    },
+    {
+      "role": "assistant",
+      "content": "Great! Now, let’s move on to some optional sections. Do you have any nervous system disorders, such as dizziness, epilepsy, or syphilis?"
+    },
+    {
+      "role": "user",
+      "content": "no"
+    },
+    {
+      "role": "assistant",
+      "content": "I've noted that you don't have any nervous system disorders. Let's move on to your general appearance assessment. Would you say your general appearance and development is good, fair, or poor?"
+    },
+    {
+      "role": "user",
+      "content": "good"
+    },
+    {
+      "role": "assistant",
+      "content": "Thank you, Shailesh! I've noted that your general appearance and development are good. Let's proceed with the examination results for your right and left ear. Could you share those with me?"
+    },
+    {
+      "role": "user",
+      "content": "they were good"
+    },
+    {
+      "role": "assistant",
+      "content": "Alright, I've noted that both your right and left ear examination results were good. Now, could you share any findings regarding diseases or injuries, if there are any?"
+    },
+    {
+      "role": "user",
+      "content": "no"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for letting me know, Shailesh! I've noted that there are no findings regarding diseases or injuries. \n\nNext, could you share the results of your thorax and heart examinations, if any?"
+    },
+    {
+      "role": "user",
+      "content": "no"
+    },
+    {
+      "role": "assistant",
+      "content": "Alright, we'll leave those fields for now. Let's move on to your blood pressure readings. Could you share your systolic and diastolic blood pressure readings, if available?"
+    }
+  ],
+  "progress": 61,
+  "lang": "en",
+  "last_asked_field": null,
+  "updated_at": "2026-02-28T20:06:18.611253"
+}

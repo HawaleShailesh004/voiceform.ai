@@ -3,17 +3,19 @@ Vaarta WhatsApp Delivery — via Twilio
 Sends filled PDF to user's WhatsApp after form completion.
 
 Setup (one-time):
-  1. pip install twilio
+  1. pip install twilio cloudinary
   2. Set env vars:
        TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
        TWILIO_AUTH_TOKEN=your_auth_token
        TWILIO_WHATSAPP_FROM=whatsapp:+14155238886   # Twilio sandbox number
-       VAARTA_BASE_URL=https://your-domain.com      # public URL for PDF serving
+       VAARTA_BASE_URL=https://your-domain.com      # optional: public URL for PDF (if not set, Cloudinary is used)
+       CLOUDINARY_CLOUD_NAME=your_cloud_name       # for PDF attachment when VAARTA_BASE_URL is local
+       CLOUDINARY_API_KEY=...
+       CLOUDINARY_API_SECRET=...
 
   3. For sandbox: the recipient must first send "join <sandbox-word>" to your
      TWILIO_WHATSAPP_FROM number. Otherwise Twilio returns 201 but the message
-     may not be delivered to WhatsApp. If logs show "WhatsApp sent to +91..." but
-     the user did not get it, have them join the sandbox first.
+     may not be delivered to WhatsApp.
 """
 
 import logging
@@ -64,6 +66,7 @@ async def send_whatsapp_pdf(
     lang: str = "en",
     *,
     recipient_label: Optional[str] = None,
+    pdf_url_override: Optional[str] = None,
 ) -> dict:
     """
     Send filled PDF to user via WhatsApp.
@@ -74,6 +77,7 @@ async def send_whatsapp_pdf(
         form_title: Form name shown in the message
         session_id: Session ID (used to generate public PDF URL)
         lang:       'en' or 'hi' — determines message language
+        pdf_url_override: If set, use this URL instead of uploading (avoids duplicate Cloudinary uploads)
 
     Returns:
         {"success": True, "message_sid": "...", "to": "whatsapp:+91..."}
@@ -86,20 +90,33 @@ async def send_whatsapp_pdf(
         from_wa    = os.environ.get("TWILIO_WHATSAPP_FROM", "whatsapp:+14155238886")
         base_url   = os.environ.get("VAARTA_BASE_URL", "http://localhost:8000").rstrip("/")
         is_public  = "localhost" not in base_url and "127.0.0.1" not in base_url
-        pdf_url    = f"{base_url}/api/sessions/{session_id}/filled-pdf" if is_public else None
+        pdf_url    = pdf_url_override or (f"{base_url}/api/sessions/{session_id}/filled-pdf" if is_public else None)
 
-        body = _compose_message(form_title, lang, include_pdf_above=is_public)
+        # When base URL is local, upload PDF to Cloudinary (unless URL already provided)
+        if not pdf_url and Path(pdf_path).exists():
+            from services.cloudinary_storage import upload_pdf, is_configured as cloudinary_configured
+            if cloudinary_configured():
+                pdf_url = upload_pdf(pdf_path, public_id_prefix="vaarta/filled")
+                if pdf_url:
+                    logger.info("Using Cloudinary URL for WhatsApp PDF attachment")
+            if not pdf_url:
+                logger.info("VAARTA_BASE_URL is local and Cloudinary not configured — sending text only (no PDF attachment)")
+
+        body = _compose_message(form_title, lang, include_pdf_above=bool(pdf_url))
 
         client = _twilio_client()
         create_kw: dict = {"from_": from_wa, "to": to_wa, "body": body}
         if pdf_url:
             create_kw["media_url"] = [pdf_url]
-        else:
-            logger.info("VAARTA_BASE_URL is local — sending text only (no PDF attachment)")
         message = client.messages.create(**create_kw)
 
         who = f" ({recipient_label})" if recipient_label else ""
-        logger.info("WhatsApp sent to %s%s | SID: %s", normalised, who, message.sid)
+        logger.info("WhatsApp sent to %s%s | SID: %s | media: %s", normalised, who, message.sid, getattr(message, "num_media", "?"))
+        if pdf_url and getattr(message, "num_media", 0) == 0:
+            logger.warning("Twilio accepted the message but num_media=0 — PDF may not be attached. Check URL is public and PDF <5MB. URL: %s...", (pdf_url or "")[:80])
+        if pdf_url and "localhost" in base_url:
+            logger.warning("If the WhatsApp message didn't arrive: from your phone, send 'join <your-sandbox-word>' to %s first (24h session).", from_wa.replace("whatsapp:", ""))
+
         return {
             "success":     True,
             "message_sid": message.sid,

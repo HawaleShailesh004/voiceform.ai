@@ -8,9 +8,9 @@ import toast from 'react-hot-toast'
 import {
   Send, Mic, MicOff, CheckCircle,
   MessageSquareText, Paperclip, X, FileText, Image as ImageIcon,
-  Download, MessageCircle, Loader2
+  Download, MessageCircle, Loader2, Volume2
 } from 'lucide-react'
-import { sessionAPI, chatAPI, fillAPI, whatsappAPI, type ChatResponse } from '@/lib/api'
+import { sessionAPI, chatAPI, fillAPI, whatsappAPI, audioAPI, type ChatResponse } from '@/lib/api'
 import WhatsAppModal from '@/components/shared/WhatsAppModal'
 import clsx from 'clsx'
 
@@ -476,16 +476,22 @@ export default function ChatPage() {
   const [waOpen, setWaOpen]           = useState(false)
   const [getPDFOpen, setGetPDFOpen]   = useState(false)
   const [getPDFPartial, setGetPDFPartial] = useState(false)
+  const [ttsAvailable, setTtsAvailable] = useState(false)
+  const [ttsEnabled, setTtsEnabled]   = useState(false)
 
   const scrollRef  = useRef<HTMLDivElement>(null)
   const inputRef   = useRef<HTMLInputElement>(null)
   const sessionRef = useRef<string | null>(incomingSession)
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [msgs, sending])
 
   useEffect(() => { whatsappAPI.isConfigured().then(setWaConfigured) }, [])
+  useEffect(() => {
+    audioAPI.status().then(s => setTtsAvailable(s.tts_available)).catch(() => {})
+  }, [])
 
   useEffect(() => {
     async function init() {
@@ -534,6 +540,7 @@ export default function ChatPage() {
       setProgress(res.progress); setCollected(res.collected)
       setFilledCount(Object.values(res.collected).filter(v => v && v !== 'N/A').length)
       if (res.is_complete) setDone(true)
+      if (ttsEnabled && ttsAvailable && res.reply) playTts(res.reply)
     } catch {
       setMsgs(p => [...p, {
         id: Date.now().toString(), role: 'bot', ts: new Date(),
@@ -568,12 +575,14 @@ export default function ChatPage() {
       ))
       setCollected(data.collected); setProgress(data.progress)
       setFilledCount(Object.values(data.collected as any).filter((v: any) => v && v !== 'N/A').length)
+      const botReply = data.extracted_value && !['SIGNATURE_UPLOADED', 'PHOTO_UPLOADED'].includes(data.extracted_value)
+        ? (lang === 'hi' ? `✓ मिला: ${data.extracted_value}` : `✓ Got it! Extracted: ${data.extracted_value}`)
+        : (lang === 'hi' ? '✓ फ़ाइल अपलोड हो गई।' : '✓ File uploaded successfully.')
       setMsgs(p => [...p, {
         id: (Date.now()+1).toString(), role: 'bot', ts: new Date(),
-        text: data.extracted_value && !['SIGNATURE_UPLOADED', 'PHOTO_UPLOADED'].includes(data.extracted_value)
-          ? (lang === 'hi' ? `✓ मिला: ${data.extracted_value}` : `✓ Got it! Extracted: ${data.extracted_value}`)
-          : (lang === 'hi' ? '✓ फ़ाइल अपलोड हो गई।' : '✓ File uploaded successfully.'),
+        text: botReply,
       }])
+      if (ttsEnabled && ttsAvailable) playTts(botReply)
       toast.success('File uploaded!')
     } catch {
       toast.error('Upload failed — please try again')
@@ -597,6 +606,33 @@ export default function ChatPage() {
 
   const handleVoice = useCallback((t: string) => { setInput(t); inputRef.current?.focus() }, [])
   const { listening, supported, toggle } = useVoice(handleVoice, lang)
+
+  const playTts = useCallback(async (text: string) => {
+    if (!ttsEnabled || !ttsAvailable || !text?.trim()) return
+    const plain = text.replace(/\*([^*]*)\*/g, '$1').replace(/\n/g, ' ').trim()
+    if (!plain) return
+    try {
+      if (ttsAudioRef.current) {
+        ttsAudioRef.current.pause()
+        ttsAudioRef.current = null
+      }
+      const blob = await audioAPI.synthesize(plain, lang)
+      const url = URL.createObjectURL(blob)
+      const audio = new Audio(url)
+      ttsAudioRef.current = audio
+      audio.onended = () => {
+        URL.revokeObjectURL(url)
+        ttsAudioRef.current = null
+      }
+      audio.onerror = () => {
+        URL.revokeObjectURL(url)
+        ttsAudioRef.current = null
+      }
+      await audio.play()
+    } catch {
+      toast.error(lang === 'hi' ? 'आवाज़ चालू नहीं हो पाई' : 'Could not play voice')
+    }
+  }, [ttsEnabled, ttsAvailable, lang])
 
   const resumeLink = sessionId
     ? `${typeof window !== 'undefined' ? window.location.origin : ''}/chat/${formId}?session=${sessionId}`
@@ -819,6 +855,22 @@ export default function ChatPage() {
                     : { background: C.surface, border: `1px solid ${C.border}`, color: C.creamMuted }
                   }>
                   {listening ? <MicOff size={16} /> : <Mic size={16} />}
+                </button>
+              )}
+
+              {/* TTS: read aloud when enabled */}
+              {ttsAvailable && (
+                <button
+                  type="button"
+                  onClick={() => setTtsEnabled(e => !e)}
+                  title={ttsEnabled ? (lang === 'hi' ? 'जोर से पढ़ना बंद करें' : 'Turn off read aloud') : (lang === 'hi' ? 'जोर से पढ़ें' : 'Read aloud')}
+                  className="flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-all"
+                  style={ttsEnabled
+                    ? { background: C.saffronAlpha, border: `1px solid ${C.saffronBorder}`, color: C.saffron }
+                    : { background: C.surface, border: `1px solid ${C.border}`, color: C.creamMuted }
+                  }
+                >
+                  <Volume2 size={16} />
                 </button>
               )}
 

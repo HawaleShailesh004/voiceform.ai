@@ -38,20 +38,23 @@ Vaarta has two sides:
 
 - **Universal form ingestion** - AcroForm PDF (~100% accuracy), scanned PDF, image PDF (50–70% accuracy with visual correction)
 - **AI field extraction** - Claude Vision extracts field names, types, bounding boxes, question templates, validation rules
-- **Visual field editor** - drag bounding boxes, live canvas preview with sample Indian data, overflow detection, per-field font/size/colour/alignment, undo/redo (30 steps), auto-save
+- **Visual field editor** - drag bounding boxes, live canvas preview with sample Indian data, per-field font/size/colour/alignment, undo/redo (50 steps), **auto-save every 6s**, **re-extract with confirmation** to avoid losing edits
+- **Editor UX** - type dropdown stays aligned on scroll (portal + scroll listeners), **Chat preview** button opens `/chat/[formId]` in a new tab to test before sharing
 - **Form health score** - automated A–F grade across 5 dimensions before sharing
-- **Session dashboard** - All / Active / Completed filter, download PDFs, export CSV
+- **Session dashboard** - All / Active / Completed filter, download PDFs, export CSV; **delete forms** from dashboard (form + sessions + filled PDFs removed)
 - **Analytics** - field-level drop-off funnel, completion rate, language distribution
-- **Share** - chat link, QR code, WhatsApp share link
+- **Share** - chat link, **QR code (download as PNG or SVG)** for print/WhatsApp, WhatsApp share link with pre-written message
 
 ### User side
 
-- **Multilingual chat** - English, Hindi, Hinglish, Tamil, Telugu, Bengali, Gujarati
+- **Multilingual chat** - English, Hindi, Hinglish, Tamil, Telugu, Bengali, Gujarati; bot replies in the user’s language; **extracted values stored in English for PDF** when form is in English (no boxes for Indic script)
 - **Voice input** - Web Speech API (en-IN / hi-IN), browser-native
+- **Read aloud (TTS)** - optional **speaker toggle** in chat; when on, bot replies are spoken via Google Cloud TTS (en/hi and other Indian languages)
 - **Smart inference** - e.g. "Rahul Kumar Sharma" fills first, middle, last name simultaneously
-- **Indian document validation** - PAN, Aadhaar, GSTIN, IFSC, TAN, mobile, pincode
+- **Checkbox & radio** - bot always asks for these (no skipping); options listed in context
+- **Indian document validation** - PAN, Aadhaar, GSTIN, IFSC, TAN, mobile, pincode (invalid values not saved; no injected error text — natural replies only)
 - **Session resume** - return to incomplete form via `?session=...` URL
-- **WhatsApp PDF delivery** - filled form sent via Twilio to user's phone number
+- **WhatsApp PDF delivery** - filled form sent via Twilio; when `VAARTA_BASE_URL` is local, **Cloudinary** uploads the PDF and Twilio uses that public URL so the PDF is attached even without a public backend
 
 ---
 
@@ -62,12 +65,13 @@ Vaarta has two sides:
 | **Frontend** | Next.js 14 (App Router), React 18, TypeScript |
 | **Styling** | Tailwind CSS, Framer Motion |
 | **Canvas preview** | HTML5 Canvas API (client-only) |
-| **AI - Extraction** | Anthropic Claude `claude-sonnet-4-20250514` (Vision) |
-| **AI - Chat** | OpenAI GPT-4o with tool-calling |
+| **AI - Extraction** | Anthropic Claude (Vision) |
+| **AI - Chat** | OpenAI GPT-4o or **Groq** (OpenAI-compatible) via `CHAT_PROVIDER` |
 | **Backend** | Python 3, FastAPI, Uvicorn |
-| **PDF** | PyMuPDF (fitz), ReportLab, Pillow |
-| **WhatsApp** | Twilio WhatsApp Business API |
-| **Voice** | Web Speech API (browser-native) |
+| **PDF** | PyMuPDF (fitz), ReportLab, Pillow (Unicode/Indic font fallback for overlay) |
+| **WhatsApp** | Twilio WhatsApp Business API; **Cloudinary** for public PDF URL when backend is local |
+| **Voice - STT** | Web Speech API (browser) or Groq Whisper via `/api/audio/transcribe` |
+| **Voice - TTS** | Google Cloud Text-to-Speech via `/api/audio/synthesize` (optional) |
 
 ---
 
@@ -76,33 +80,34 @@ Vaarta has two sides:
 ```
 vaarta/
 ├── backend/
-│   ├── main.py                # FastAPI app, all routes
+│   ├── main.py                # FastAPI app, CORS, route wiring
+│   ├── config.py              # Settings from env
 │   ├── extractor.py           # Claude Vision + PyMuPDF field extraction
-│   ├── chat_engine.py         # GPT-4o tool-calling chat engine
-│   ├── fillback.py            # AcroForm fill + image overlay PDF generation
-│   ├── health_score.py        # 5-dimension form health scoring
-│   ├── whatsapp_delivery.py   # Twilio WhatsApp PDF delivery
-│   ├── store.py               # File-based JSON persistence
-│   ├── prompts.py             # System prompts, validation rules
+│   ├── chat_engine.py         # Chat (OpenAI or Groq), validation, no error injection
+│   ├── fillback.py            # AcroForm + overlay (Unicode/Indic font fallback)
+│   ├── whatsapp_delivery.py   # Twilio + Cloudinary PDF URL when local
+│   ├── store.py               # Persistence facade
+│   ├── prompts.py             # System prompts, checkbox/radio rules
+│   ├── api/routes/            # health, agent, forms, sessions, chat, fill, whatsapp, audio
+│   ├── services/tts.py        # Google TTS; services/cloudinary_storage.py
 │   ├── requirements.txt
-│   └── .env.example
+│   └── .env
 │
 ├── frontend/
 │   ├── src/
 │   │   ├── app/
 │   │   │   ├── agent/                      # Agent dashboard, upload, form detail
-│   │   │   │   ├── page.tsx                # Dashboard
+│   │   │   │   ├── page.tsx                # Dashboard (list forms, delete)
 │   │   │   │   ├── upload/page.tsx        # Upload form
 │   │   │   │   └── form/[formId]/
 │   │   │   │       ├── page.tsx            # Sessions, health, analytics
-│   │   │   │       ├── edit/page.tsx      # Field editor
-│   │   │   │       └── analytics/page.tsx # Analytics dashboard
-│   │   │   └── chat/[formId]/page.tsx      # User chat interface
+│   │   │   │       └── edit/page.tsx      # Field editor, re-extract confirm, chat preview
+│   │   │   └── chat/[formId]/page.tsx      # User chat (TTS toggle, voice, WhatsApp modal)
 │   │   ├── components/
-│   │   │   ├── editor/FieldEditor.tsx      # Visual field editor
+│   │   │   ├── editor/FieldEditor.tsx      # Drag/resize, type dropdown (scroll fix)
 │   │   │   ├── shared/
 │   │   │   │   ├── AgentNav.tsx
-│   │   │   │   ├── ShareModal.tsx
+│   │   │   │   ├── ShareModal.tsx        # QR PNG/SVG, link, WhatsApp
 │   │   │   │   └── FormHealthScore.tsx
 │   │   │   └── analytics/FormAnalyticalDashboard.tsx
 │   │   ├── lib/api.ts                      # All API calls + types
@@ -110,7 +115,7 @@ vaarta/
 │   ├── tailwind.config.js
 │   └── .env.local.example
 │
-└── data/                      # Auto-created at runtime
+└── backend/data/              # Auto-created (VAARTA_DATA_DIR)
     ├── forms/                 # Form schemas (JSON)
     ├── originals/            # Uploaded files
     ├── sessions/             # Session state (JSON)
@@ -157,10 +162,21 @@ VAARTA_DATA_DIR=data
 TWILIO_ACCOUNT_SID=your_sid
 TWILIO_AUTH_TOKEN=your_token
 TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
-VAARTA_BASE_URL=https://your-public-url.ngrok.io   # needed for Twilio media URL
+VAARTA_BASE_URL=https://your-public-url.ngrok.io   # or leave local and use Cloudinary below
+VAARTA_ALWAYS_SEND_TO=+91XXXXXXXXXX               # copy of every filled PDF to this number
 
-# Optional - send every filled form to this number as well
-VAARTA_ALWAYS_SEND_TO=whatsapp:+91XXXXXXXXXX
+# Optional - when VAARTA_BASE_URL is local, upload PDF to Cloudinary so Twilio can attach it
+CLOUDINARY_CLOUD_NAME=your_cloud
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+
+# Optional - Chat: Groq (set CHAT_PROVIDER=groq) or OpenAI
+CHAT_PROVIDER=openai
+GROQ_API_KEY=...
+GROQ_CHAT_MODEL=openai/gpt-oss-120b
+
+# Optional - Read aloud (TTS) in chat
+GOOGLE_TTS_API_KEY=...
 ```
 
 Start the server:
@@ -197,15 +213,11 @@ Open **http://localhost:3000** - redirects to `/agent`.
 
 ### Twilio WhatsApp (optional)
 
-For local development, expose the backend with ngrok:
+**Option A – Public backend:** Set `VAARTA_BASE_URL` to your public URL (e.g. ngrok or production). Twilio fetches the PDF from `{VAARTA_BASE_URL}/api/sessions/{id}/filled-pdf`.
 
-```bash
-ngrok http 8000
-```
+**Option B – Local backend:** Leave `VAARTA_BASE_URL` as localhost and set **Cloudinary** env vars (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`). The backend uploads each filled PDF to Cloudinary and sends that URL to Twilio, so the PDF is attached without exposing your machine.
 
-Set `VAARTA_BASE_URL` in `.env` to the ngrok HTTPS URL. Twilio uses this to serve the filled PDF as a media attachment.
-
-For production, set `VAARTA_BASE_URL` to your deployed backend URL.
+**Sandbox:** Recipients must send `join <your-sandbox-word>` to your Twilio WhatsApp number first; otherwise messages may not be delivered even when the API returns 201.
 
 ---
 
@@ -214,18 +226,22 @@ For production, set `VAARTA_BASE_URL` to your deployed backend URL.
 | Variable | Required | Purpose |
 |----------|----------|---------|
 | `ANTHROPIC_API_KEY` | Yes | Claude (form extraction) |
-| `OPENAI_API_KEY` | Yes | GPT-4o (chat + sample values) |
+| `OPENAI_API_KEY` | Yes | GPT-4o (chat + sample values) unless using Groq |
 | `BASE_URL` | Yes | Frontend base URL for share links (e.g. `http://localhost:3000`) |
 | `ALLOWED_ORIGINS` | Yes | CORS (e.g. `http://localhost:3000`) |
 | `VAARTA_DATA_DIR` | | Data directory (default `data`) |
 | `TWILIO_ACCOUNT_SID` | | WhatsApp |
 | `TWILIO_AUTH_TOKEN` | | WhatsApp |
 | `TWILIO_WHATSAPP_FROM` | | e.g. `whatsapp:+14155238886` |
-| `VAARTA_BASE_URL` | | Public backend URL for Twilio to fetch PDF (e.g. ngrok) |
-| `VAARTA_ALWAYS_SEND_TO` | | Phone number that receives a copy on every fill |
-| `CHAT_PROVIDER` | | `openai` (default) or `groq` — use Groq for chat (OpenAI-compatible, e.g. openai/gpt-oss-120b) |
+| `VAARTA_BASE_URL` | | Public backend URL for PDF; if local, Cloudinary is used for WhatsApp PDF URL |
+| `VAARTA_ALWAYS_SEND_TO` | | Phone number that receives a copy on every fill (E.164 or 10-digit) |
+| `CLOUDINARY_CLOUD_NAME` | | For WhatsApp PDF when `VAARTA_BASE_URL` is local |
+| `CLOUDINARY_API_KEY` | | Cloudinary |
+| `CLOUDINARY_API_SECRET` | | Cloudinary |
+| `CHAT_PROVIDER` | | `openai` (default) or `groq` |
 | `GROQ_API_KEY` | | Required when `CHAT_PROVIDER=groq` |
-| `GROQ_CHAT_MODEL` | | Model name when using Groq (default `openai/gpt-oss-120b`) |
+| `GROQ_CHAT_MODEL` | | e.g. `openai/gpt-oss-120b` |
+| `GOOGLE_TTS_API_KEY` | | Enables “Read aloud” (TTS) in chat; `/api/audio/synthesize` |
 
 ---
 
@@ -236,6 +252,7 @@ For production, set `VAARTA_BASE_URL` to your deployed backend URL.
 | `POST` | `/api/forms/upload` | Upload form → extract fields → return schema |
 | `GET` | `/api/forms/{id}` | Get form schema |
 | `PATCH` | `/api/forms/{id}` | Update fields and title |
+| `DELETE` | `/api/forms/{id}` | Delete form and all sessions, filled PDFs, originals |
 | `GET` | `/api/forms/{id}/preview` | Preview image (base64) |
 | `POST` | `/api/forms/{id}/re-extract` | Re-run extraction on original |
 | `GET` | `/api/forms/{id}/health` | Form health score |
@@ -245,12 +262,16 @@ For production, set `VAARTA_BASE_URL` to your deployed backend URL.
 | `GET` | `/api/agent/forms` | List all forms (dashboard) |
 | `POST` | `/api/sessions/create` | Create new session |
 | `GET` | `/api/sessions/{id}/resume` | Resume session (chat history + collected) |
+| `GET` | `/api/sessions/{id}/filled-pdf` | Serve filled PDF (when VAARTA_BASE_URL public) |
 | `POST` | `/api/chat/open` | Generate opening message |
 | `POST` | `/api/chat` | Send message → reply + extracted values |
 | `POST` | `/api/sessions/{id}/fill` | Generate filled PDF |
-| `POST` | `/api/sessions/{id}/whatsapp` | Send PDF to phone via WhatsApp |
+| `POST` | `/api/sessions/{id}/whatsapp` | Send PDF to phone (Cloudinary URL when local) |
 | `POST` | `/api/sessions/{id}/upload-file` | Upload file for a field |
 | `GET` | `/api/whatsapp/status` | Check Twilio configuration |
+| `GET` | `/api/audio/status` | Voice status (STT/TTS available) |
+| `POST` | `/api/audio/transcribe` | Transcribe audio (Whisper) |
+| `POST` | `/api/audio/synthesize` | Text-to-speech (Google TTS) |
 
 ---
 

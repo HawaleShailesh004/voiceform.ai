@@ -1,0 +1,16 @@
+{
+  "session_id": "4fbc8467-ca78-4a17-b604-2648a30d701b",
+  "form_id": "de5c3093-642a-4c38-be0c-f67638aecb65",
+  "created_at": "2026-02-28T21:01:58.181462",
+  "status": "active",
+  "collected": {},
+  "chat_history": [
+    {
+      "role": "assistant",
+      "content": "Hey there! It's great to have you here, and don't worry, we'll breeze through this form together in no time. Let's get started with the first thing we need: could you please share the Entity/Individual Name with me?"
+    }
+  ],
+  "progress": 0,
+  "lang": "en",
+  "last_asked_field": null
+}

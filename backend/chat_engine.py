@@ -790,13 +790,7 @@ async def run_chat_turn(
                     skip_block_reply = f"'{field_obj.get('semantic_label', target_field)}' is a required field and can't be skipped. Could you provide it, even if approximate?"
                 reply = skip_block_reply
 
-    # ── Inject Tier-1 validation error into reply if needed ──
-    if hard_validation_errors:
-        error_msgs = [msg for _, msg in hard_validation_errors]
-        if reply:
-            reply = reply + "\n\n" + "\n".join(error_msgs)
-        else:
-            reply = "\n".join(error_msgs)
+    # ── No injection of validation errors: keep the model's reply natural; invalid values simply aren't persisted ──
 
     # ── Conditional field skipping ──
     for f in form_schema.get("fields", []):
@@ -819,7 +813,8 @@ async def run_chat_turn(
         is_complete = False
         session["awaiting_summary_confirm"] = True
 
-    # ── WhatsApp phone collection (only after summary confirmed) ──
+    # ── WhatsApp: only capture if user volunteers it in this message; never ask in chat ──
+    # (Frontend "Get PDF" / "Send to WhatsApp" modal collects number; no duplicate ask here.)
     if is_complete and whatsapp_is_configured():
         phone_stored = session.get("whatsapp_phone")
         if not phone_stored:
@@ -829,22 +824,6 @@ async def run_chat_turn(
             elif phone_from_msg:
                 session["whatsapp_phone"] = phone_from_msg
                 extracted["_whatsapp_phone"] = phone_from_msg
-            else:
-                is_complete = False
-                if lang == "hi":
-                    reply = (
-                        "बहुत बढ़िया! 🎉 आपका फ़ॉर्म लगभग तैयार है।\n\n"
-                        "क्या आप चाहेंगे कि भरा हुआ PDF आपके WhatsApp पर भेजा जाए? "
-                        "अगर हाँ, तो अपना WhatsApp नंबर बताएँ (10 अंक)। "
-                        "या 'नहीं' कहें — फिर आप सीधे डाउनलोड कर सकते हैं।"
-                    )
-                else:
-                    reply = (
-                        "Almost done! 🎉\n\n"
-                        "Would you like your completed PDF sent directly to your WhatsApp? "
-                        "If yes, share your WhatsApp number (10 digits). "
-                        "Or say 'skip' to just download it."
-                    )
 
     history.append({"role": "assistant", "content": reply})
 

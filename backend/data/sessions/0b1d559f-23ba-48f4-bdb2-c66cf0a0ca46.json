@@ -1,0 +1,53 @@
+{
+  "session_id": "0b1d559f-23ba-48f4-bdb2-c66cf0a0ca46",
+  "form_id": "12a47bbf-3239-4aef-860c-bbacad9711ce",
+  "created_at": "2026-02-28T21:03:59.576844",
+  "status": "active",
+  "collected": {
+    "name": "Shailesh Vale",
+    "address": "श्रीनगर दिनेश कृपा अपार्टमेंट",
+    "mobile_number": "9321556764"
+  },
+  "chat_history": [
+    {
+      "role": "assistant",
+      "content": "Hey there! I'm here to help you breeze through your Personal Information Form, and we'll have it done in no time. Let's get started—could you please share your name with me?"
+    },
+    {
+      "role": "user",
+      "content": "हां हम शुरू कर सकते हैं"
+    },
+    {
+      "role": "assistant",
+      "content": "बिल्कुल! चलिए शुरू करते हैं। क्या आप अपना पूरा नाम बता सकते हैं?"
+    },
+    {
+      "role": "user",
+      "content": "मेरा नाम शैलेश वाले है"
+    },
+    {
+      "role": "assistant",
+      "content": "ठीक है, शैलेश! आपके नाम के साथ आगे बढ़ते हैं। अब कृपया अपना पता साझा करें।"
+    },
+    {
+      "role": "user",
+      "content": "मैं श्रीनगर दिनेश कृपा अपार्टमेंट में रहता हूं"
+    },
+    {
+      "role": "assistant",
+      "content": "धन्यवाद, शैलेश! अब, कृपया अपना मोबाइल नंबर साझा करें। यह 10 अंकों का भारतीय मोबाइल नंबर होना चाहिए।"
+    },
+    {
+      "role": "user",
+      "content": "9321556764"
+    },
+    {
+      "role": "assistant",
+      "content": "बिल्कुल! अब हमें आपका ईमेल पता चाहिए होगा ताकि हम आपके साथ संवाद कर सकें। कृपया अपना ईमेल पता साझा करें।"
+    }
+  ],
+  "progress": 20,
+  "lang": "hi",
+  "last_asked_field": "mobile_number",
+  "updated_at": "2026-02-28T21:05:33.495492"
+}

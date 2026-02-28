@@ -1,0 +1,16 @@
+{
+  "session_id": "c176e99c-66b2-4995-a04c-a96483aafe5a",
+  "form_id": "12a47bbf-3239-4aef-860c-bbacad9711ce",
+  "created_at": "2026-02-28T20:47:21.613075",
+  "status": "active",
+  "collected": {},
+  "chat_history": [
+    {
+      "role": "assistant",
+      "content": "Hey there, it's great to have you here! Let's breeze through this form together and make it as quick and easy as possible. Could you start by telling me your name?"
+    }
+  ],
+  "progress": 0,
+  "lang": "en",
+  "last_asked_field": null
+}

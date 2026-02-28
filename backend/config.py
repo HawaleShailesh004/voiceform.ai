@@ -34,6 +34,11 @@ class Settings:
     VAARTA_ALWAYS_SEND_TO: str = ""
     VAARTA_BASE_URL: str = ""
 
+    # Optional: Cloudinary for public PDF URLs (e.g. WhatsApp attachments when base URL is local)
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_API_KEY: str = ""
+    CLOUDINARY_API_SECRET: str = ""
+
     # API keys (required for core features)
     ANTHROPIC_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
@@ -57,6 +62,9 @@ class Settings:
         self.VAARTA_DATA_DIR = Path(data_dir)
         self.VAARTA_ALWAYS_SEND_TO = (os.environ.get("VAARTA_ALWAYS_SEND_TO") or "").strip()
         self.VAARTA_BASE_URL = (os.environ.get("VAARTA_BASE_URL") or "").strip()
+        self.CLOUDINARY_CLOUD_NAME = (os.environ.get("CLOUDINARY_CLOUD_NAME") or "").strip()
+        self.CLOUDINARY_API_KEY = (os.environ.get("CLOUDINARY_API_KEY") or "").strip()
+        self.CLOUDINARY_API_SECRET = (os.environ.get("CLOUDINARY_API_SECRET") or "").strip()
         self.ANTHROPIC_API_KEY = (os.environ.get("ANTHROPIC_API_KEY") or "").strip()
         self.OPENAI_API_KEY = (os.environ.get("OPENAI_API_KEY") or "").strip()
         provider = (os.environ.get("CHAT_PROVIDER") or "openai").lower()

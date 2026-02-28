@@ -48,6 +48,15 @@ async def fill_form(
     logger.info("fill_form: session_id=%s partial=%s path=%s", session_id, partial, output)
     if not partial:
         session["status"] = "completed"
+        # Upload PDF once and reuse URL for all WhatsApp sends (avoids 2–3x Cloudinary uploads)
+        pdf_url_shared = None
+        if _settings.VAARTA_BASE_URL and ("localhost" in _settings.VAARTA_BASE_URL or "127.0.0.1" in _settings.VAARTA_BASE_URL):
+            try:
+                from services.cloudinary_storage import upload_pdf, is_configured as cloudinary_ok
+                if cloudinary_ok():
+                    pdf_url_shared = upload_pdf(output, public_id_prefix="vaarta/filled")
+            except Exception:
+                pass
         phone = session.get("whatsapp_phone")
         if phone and phone != "__SKIP__":
             from whatsapp_delivery import send_whatsapp_pdf, is_configured
@@ -60,22 +69,24 @@ async def fill_form(
                         session_id=session_id,
                         lang=session.get("lang", "en"),
                         recipient_label="user",
+                        pdf_url_override=pdf_url_shared,
                     )
                 )
-    if _settings.VAARTA_ALWAYS_SEND_TO:
-        from whatsapp_delivery import send_whatsapp_pdf, is_configured
-        if is_configured():
-            logger.info("fill_form: also sending to VAARTA_ALWAYS_SEND_TO=%s", _settings.VAARTA_ALWAYS_SEND_TO)
-            asyncio.create_task(
-                send_whatsapp_pdf(
-                    phone=_settings.VAARTA_ALWAYS_SEND_TO,
-                    pdf_path=output,
-                    form_title=form.get("form_title", "your form"),
-                    session_id=session_id,
-                    lang=session.get("lang", "en"),
-                    recipient_label="VAARTA_ALWAYS_SEND_TO",
+        if _settings.VAARTA_ALWAYS_SEND_TO:
+            from whatsapp_delivery import send_whatsapp_pdf, is_configured
+            if is_configured():
+                logger.info("fill_form: also sending to VAARTA_ALWAYS_SEND_TO=%s", _settings.VAARTA_ALWAYS_SEND_TO)
+                asyncio.create_task(
+                    send_whatsapp_pdf(
+                        phone=_settings.VAARTA_ALWAYS_SEND_TO,
+                        pdf_path=output,
+                        form_title=form.get("form_title", "your form"),
+                        session_id=session_id,
+                        lang=session.get("lang", "en"),
+                        recipient_label="VAARTA_ALWAYS_SEND_TO",
+                        pdf_url_override=pdf_url_shared,
+                    )
                 )
-            )
     store.save_session(session_id, session)
     original_name = form.get("original_filename", "form.pdf")
     suffix = "partial_" if partial else "filled_"
