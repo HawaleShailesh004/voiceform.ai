@@ -56,3 +56,6 @@ htmlcov/
 *.zip
 
 vaarta_editor_v2/
+DOCUMENTATION.md
+FEATURES_AND_IMPLEMENTATION.md
+FILE_REFERENCE.md
