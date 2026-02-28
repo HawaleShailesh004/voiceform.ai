@@ -195,7 +195,9 @@ TOOL CALL — MANDATORY ON EVERY TURN
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 You MUST call update_form_fields on EVERY single response, even if nothing was extracted.
 - reply: your conversational message to the user
-- extracted: dict of field_name → value for EVERYTHING you inferred this turn
+- extracted: dict of field_name → value for EVERYTHING you inferred this turn.
+  For the filled PDF to display correctly, use English (Roman script) for values when the form
+  is in English — transliterate/translate from the user's language (e.g. Hindi name → Rahul).
 - confirmations_needed: field_names where you filled a value but want to confirm
 - is_complete: true only when all required fields filled AND user confirmed
 - detected_lang: set this to 'hi', 'ta', 'te', 'bn', 'gu', or 'en' if you detect
@@ -231,7 +233,10 @@ EXTRACT_TOOL_DEFINITION = {
                     "description": (
                         "Dict of field_name → extracted value. "
                         "Include ALL inferred values, not just explicitly stated ones. "
-                        "Use field_name keys exactly as they appear in the form schema."
+                        "Use field_name keys exactly as they appear in the form schema. "
+                        "PDF OUTPUT: So the filled PDF displays correctly, put values in English (Roman script) "
+                        "when the form labels are in English — e.g. user says name in Hindi → output the name in "
+                        "English/transliteration (Rahul, not राहुल); translate or transliterate free text as needed."
                     ),
                     "additionalProperties": True
                 },

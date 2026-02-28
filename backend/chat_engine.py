@@ -4,6 +4,7 @@ Upgrades:
   - Auto language detection persisted back via detected_lang
   - PAN / Aadhaar / GSTIN / IFSC / TAN validation
   - Drop-off signal: last_asked_field tracked so analytics know where users stop
+  - Optional: use Groq (OpenAI-compatible) for chat via CHAT_PROVIDER=groq, model e.g. openai/gpt-oss-120b
 """
 
 import json
@@ -13,11 +14,11 @@ import re
 from datetime import datetime
 from typing import Any
 
-from openai import AsyncOpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
 
+from config import get_settings
 from prompts import (
     SYSTEM_PROMPT,
     EXTRACT_TOOL_DEFINITION,
@@ -26,7 +27,23 @@ from prompts import (
 )
 
 logger = logging.getLogger(__name__)
-client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+_settings = get_settings()
+
+
+def _chat_client():
+    """Return the chat client (OpenAI or Groq) and model name based on config."""
+    if _settings.CHAT_PROVIDER == "groq":
+        from groq import AsyncGroq
+        return (
+            AsyncGroq(api_key=_settings.GROQ_API_KEY or os.environ.get("GROQ_API_KEY")),
+            _settings.GROQ_CHAT_MODEL,
+        )
+    from openai import AsyncOpenAI
+    return (
+        AsyncOpenAI(api_key=_settings.OPENAI_API_KEY or os.environ.get("OPENAI_API_KEY")),
+        "gpt-4o",
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -72,15 +89,16 @@ async def get_opening_message(form_schema: dict, lang: str = "en") -> str:
     form_title = form_schema.get("form_title", "this form")
     fields     = form_schema.get("fields", [])
     prompt     = build_opening_prompt(form_title, fields, lang)
+    client, model = _chat_client()
 
     try:
         resp = await client.chat.completions.create(
-            model="gpt-4o",
+            model=model,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.85,
             max_tokens=160,
         )
-        return resp.choices[0].message.content.strip()
+        return (resp.choices[0].message.content or "").strip()
     except Exception as e:
         logger.error(f"Opening message failed: {e}")
         if lang == "hi":
@@ -125,9 +143,10 @@ async def run_chat_turn(
 
     history.append({"role": "user", "content": user_message})
 
+    client, model = _chat_client()
     try:
         response = await client.chat.completions.create(
-            model="gpt-4o",
+            model=model,
             messages=[
                 {"role": "system", "content": system},
                 *history,
@@ -138,7 +157,7 @@ async def run_chat_turn(
             max_tokens=512,
         )
     except Exception as e:
-        logger.error(f"OpenAI call failed: {e}", exc_info=True)
+        logger.error("Chat API call failed: %s", e, exc_info=True)
         raise
 
     message = response.choices[0].message

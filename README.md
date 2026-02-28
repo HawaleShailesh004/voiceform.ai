@@ -223,6 +223,9 @@ For production, set `VAARTA_BASE_URL` to your deployed backend URL.
 | `TWILIO_WHATSAPP_FROM` | | e.g. `whatsapp:+14155238886` |
 | `VAARTA_BASE_URL` | | Public backend URL for Twilio to fetch PDF (e.g. ngrok) |
 | `VAARTA_ALWAYS_SEND_TO` | | Phone number that receives a copy on every fill |
+| `CHAT_PROVIDER` | | `openai` (default) or `groq` — use Groq for chat (OpenAI-compatible, e.g. openai/gpt-oss-120b) |
+| `GROQ_API_KEY` | | Required when `CHAT_PROVIDER=groq` |
+| `GROQ_CHAT_MODEL` | | Model name when using Groq (default `openai/gpt-oss-120b`) |
 
 ---
 

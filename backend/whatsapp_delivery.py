@@ -10,8 +10,10 @@ Setup (one-time):
        TWILIO_WHATSAPP_FROM=whatsapp:+14155238886   # Twilio sandbox number
        VAARTA_BASE_URL=https://your-domain.com      # public URL for PDF serving
 
-  3. For sandbox: user must first send "join <sandbox-word>" to +14155238886
-     For production: request WhatsApp Business API approval from Meta.
+  3. For sandbox: the recipient must first send "join <sandbox-word>" to your
+     TWILIO_WHATSAPP_FROM number. Otherwise Twilio returns 201 but the message
+     may not be delivered to WhatsApp. If logs show "WhatsApp sent to +91..." but
+     the user did not get it, have them join the sandbox first.
 """
 
 import logging
@@ -60,6 +62,8 @@ async def send_whatsapp_pdf(
     form_title: str,
     session_id: str,
     lang: str = "en",
+    *,
+    recipient_label: Optional[str] = None,
 ) -> dict:
     """
     Send filled PDF to user via WhatsApp.
@@ -94,7 +98,8 @@ async def send_whatsapp_pdf(
             logger.info("VAARTA_BASE_URL is local — sending text only (no PDF attachment)")
         message = client.messages.create(**create_kw)
 
-        logger.info(f"WhatsApp sent to {normalised} | SID: {message.sid}")
+        who = f" ({recipient_label})" if recipient_label else ""
+        logger.info("WhatsApp sent to %s%s | SID: %s", normalised, who, message.sid)
         return {
             "success":     True,
             "message_sid": message.sid,

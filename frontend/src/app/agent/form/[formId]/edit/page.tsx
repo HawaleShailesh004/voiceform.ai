@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import {
   ArrowLeft, Save, Share2, Eye, CheckCircle,
   Pencil, Check, AlertCircle, Sparkles, FileImage, Type,
-  Undo2, Redo2, RefreshCw,
+  Undo2, Redo2, RefreshCw, MessageSquare,
 } from 'lucide-react'
 import AgentNav from '@/components/shared/AgentNav'
 import FieldEditor from '@/components/editor/FieldEditor'
@@ -51,6 +51,7 @@ export default function EditFormPage() {
   const [published, setPublished] = useState(false)
   const [saveError, setSaveError] = useState(false)
   const [reExtracting, setReExtracting] = useState(false)
+  const [reExtractConfirmOpen, setReExtractConfirmOpen] = useState(false)
 
   // ── Live preview (values on same editor image) ─────────
   const [livePreview, setLivePreview] = useState(false)
@@ -63,6 +64,7 @@ export default function EditFormPage() {
   const [previewStyleModalOpen, setPreviewStyleModalOpen] = useState(false)
 
   const handleReExtract = useCallback(async () => {
+    setReExtractConfirmOpen(false)
     setReExtracting(true)
     try {
       const res = await formAPI.reExtract(formId)
@@ -147,7 +149,7 @@ export default function EditFormPage() {
     setSaved(false)
     setSaveError(false)
     clearTimeout(autoSaveTimer.current)
-    autoSaveTimer.current = setTimeout(() => doSave(next, title), 30_000)
+    autoSaveTimer.current = setTimeout(() => doSave(next, title), 6_000)
   }
 
   const onEditorActionStart = useCallback(() => {
@@ -173,7 +175,7 @@ export default function EditFormPage() {
     setSaved(false)
     setSaveError(false)
     clearTimeout(autoSaveTimer.current)
-    autoSaveTimer.current = setTimeout(() => doSave(prev, title), 30_000)
+    autoSaveTimer.current = setTimeout(() => doSave(prev, title), 6_000)
   }, [undoStack, fields, title])
 
   const handleRedo = useCallback(() => {
@@ -186,7 +188,7 @@ export default function EditFormPage() {
     setSaved(false)
     setSaveError(false)
     clearTimeout(autoSaveTimer.current)
-    autoSaveTimer.current = setTimeout(() => doSave(next, title), 30_000)
+    autoSaveTimer.current = setTimeout(() => doSave(next, title), 6_000)
   }, [redoStack, fields, title])
 
   const handleTitleChange = (next: string) => {
@@ -228,7 +230,7 @@ export default function EditFormPage() {
     setSaved(false)
     setSaveError(false)
     clearTimeout(autoSaveTimer.current)
-    autoSaveTimer.current = setTimeout(() => doSave(), 30_000)
+    autoSaveTimer.current = setTimeout(() => doSave(), 6_000)
   }, [doSave])
 
   const handleGlobalPreviewChange = useCallback(<T,>(setter: (v: T) => void, value: T) => {
@@ -397,13 +399,21 @@ export default function EditFormPage() {
 
           <div className="ml-auto flex items-center gap-2">
             <button
-              onClick={handleReExtract}
+              onClick={() => setReExtractConfirmOpen(true)}
               disabled={reExtracting}
               className="btn-ghost btn-sm"
               title="Re-run AI extraction on the original file to refresh fillable areas"
             >
               <RefreshCw size={14} className={reExtracting ? 'animate-spin' : ''} />
               Re-extract
+            </button>
+            <button
+              onClick={() => window.open(`/chat/${formId}`, '_blank', 'noopener,noreferrer')}
+              className="btn-ghost btn-sm"
+              title="Open chat in new tab to test the form flow"
+            >
+              <MessageSquare size={14} />
+              Chat preview
             </button>
             <button
               onClick={() => router.push(`/agent/form/${formId}`)}
@@ -581,6 +591,54 @@ export default function EditFormPage() {
           onCommit={onEditorCommit}
         />
       </main>
+
+      {/* Re-extract confirmation */}
+      <AnimatePresence>
+        {reExtractConfirmOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setReExtractConfirmOpen(false)}
+              className="fixed inset-0 bg-ink/40 backdrop-blur-sm z-50"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+            >
+              <div
+                className="bg-white rounded-xl shadow-deep w-full max-w-sm p-6 pointer-events-auto border border-teal/10"
+                onClick={e => e.stopPropagation()}
+              >
+                <h3 className="font-display font-semibold text-teal text-lg">Re-extract form fields?</h3>
+                <p className="text-ink-muted text-sm mt-2 font-body">
+                  This will replace all current fields with a fresh AI extraction from the original file. Your manual edits (positions, labels, types) will be lost. This cannot be undone.
+                </p>
+                <div className="flex gap-2 mt-5 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setReExtractConfirmOpen(false)}
+                    className="btn-ghost btn-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleReExtract}
+                    disabled={reExtracting}
+                    className="btn-sm bg-saffron text-white hover:bg-saffron-dark font-medium px-4"
+                  >
+                    {reExtracting ? <><Loader /> Re-extracting…</> : 'Re-extract'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <ShareModal
         isOpen={shareOpen}

@@ -25,14 +25,50 @@ export default function ShareModal({ isOpen, onClose, formTitle, chatLink, whats
     setTimeout(() => setCopied(false), 2500)
   }
 
-  const downloadQR = () => {
+  const downloadQR = (format: 'svg' | 'png') => {
     const svg = document.getElementById('vaarta-qr')
     if (!svg) return
     const xml = new XMLSerializer().serializeToString(svg)
-    const blob = new Blob([xml], { type: 'image/svg+xml' })
-    const url = URL.createObjectURL(blob)
-    Object.assign(document.createElement('a'), { href: url, download: 'vaarta-qr.svg' }).click()
-    URL.revokeObjectURL(url)
+    if (format === 'svg') {
+      const blob = new Blob([xml], { type: 'image/svg+xml' })
+      const url = URL.createObjectURL(blob)
+      Object.assign(document.createElement('a'), { href: url, download: 'vaarta-qr.svg' }).click()
+      URL.revokeObjectURL(url)
+      return
+    }
+    // PNG: draw SVG to canvas then export (print shops / WhatsApp need PNG)
+    const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' })
+    const url = URL.createObjectURL(svgBlob)
+    const img = new Image()
+    img.onload = () => {
+      const size = 512
+      const canvas = document.createElement('canvas')
+      canvas.width = size
+      canvas.height = size
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        URL.revokeObjectURL(url)
+        return
+      }
+      ctx.fillStyle = '#FFFFFF'
+      ctx.fillRect(0, 0, size, size)
+      ctx.drawImage(img, 0, 0, size, size)
+      canvas.toBlob(
+        (blob) => {
+          URL.revokeObjectURL(url)
+          if (!blob) return
+          const a = document.createElement('a')
+          a.href = URL.createObjectURL(blob)
+          a.download = 'vaarta-qr.png'
+          a.click()
+          URL.revokeObjectURL(a.href)
+        },
+        'image/png',
+        1
+      )
+    }
+    img.onerror = () => URL.revokeObjectURL(url)
+    img.src = url
   }
 
   const tabs = [
@@ -144,10 +180,16 @@ export default function ShareModal({ isOpen, onClose, formTitle, chatLink, whats
                           </div>
                         </div>
                       </div>
-                      <button onClick={downloadQR} className="btn-secondary w-full">
-                        <Download size={14} />
-                        Download QR as SVG
-                      </button>
+                      <div className="flex gap-2">
+                        <button onClick={() => downloadQR('png')} className="btn-primary flex-1">
+                          <Download size={14} />
+                          Download PNG
+                        </button>
+                        <button onClick={() => downloadQR('svg')} className="btn-secondary flex-1">
+                          <Download size={14} />
+                          SVG
+                        </button>
+                      </div>
                     </motion.div>
                   )}
 

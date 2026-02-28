@@ -42,6 +42,19 @@ const typeIcon = (t: string) => {
   return found ? found.icon : Type;
 };
 
+/** Collect scrollable ancestors so we can update dropdown position on scroll */
+function getScrollParents(node: HTMLElement | null): HTMLElement[] {
+  const out: HTMLElement[] = [];
+  let p: HTMLElement | null = node?.parentElement ?? null;
+  while (p) {
+    const s = getComputedStyle(p);
+    const o = s.overflow + s.overflowY + s.overflowX;
+    if (/(auto|scroll|overlay)/.test(o)) out.push(p);
+    p = p.parentElement;
+  }
+  return out;
+}
+
 /* ── Local sample fallback when API samples are empty ── */
 
 const SAMPLES: Record<string, string> = {
@@ -375,8 +388,21 @@ function FieldCard({
 
   useLayoutEffect(() => {
     if (!showTypes || !typeButtonRef.current) return;
-    const rect = typeButtonRef.current.getBoundingClientRect();
-    setDropdownRect({ left: rect.left, top: rect.top });
+    const el = typeButtonRef.current;
+    const update = () => {
+      const rect = el.getBoundingClientRect();
+      setDropdownRect({ left: rect.left, top: rect.top });
+    };
+    update();
+    const scrollParents = getScrollParents(el);
+    scrollParents.forEach((p) => p.addEventListener("scroll", update, { passive: true }));
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      scrollParents.forEach((p) => p.removeEventListener("scroll", update));
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
   }, [showTypes]);
 
   return (

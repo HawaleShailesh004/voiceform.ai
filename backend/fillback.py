@@ -138,17 +138,37 @@ def _overlay_fill(form_schema: dict, data: dict, output_path: str, partial: bool
             "/System/Library/Fonts/Helvetica.ttc",
             os.path.expandvars(r"%WINDIR%\Fonts\arial.ttf"),
         ]
+        # Fonts that support Devanagari/Tamil/Indic (avoid boxes for Hindi, Tamil, etc.)
+        unicode_font_paths = [
+            os.path.expandvars(r"%WINDIR%\Fonts\NirmalaUI.ttf"),   # Win 10+: Devanagari, Tamil, etc.
+            os.path.expandvars(r"%WINDIR%\Fonts\Mangal.ttf"),      # Win: Devanagari
+            "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf",
+            "/usr/share/fonts/truetype/noto/NotoSansTamil-Regular.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",     # fallback: some Unicode
+        ]
+        unicode_font_path = next((p for p in unicode_font_paths if p and os.path.exists(p)), None)
+
         regular_path = next((p for p in font_paths if os.path.exists(p)), None)
         bold_path    = next((p for p in font_paths if os.path.exists(p) and ("Bold" in p or "bd" in p.lower())), regular_path)
         italic_path  = next((p for p in font_paths if os.path.exists(p) and ("Oblique" in p or "Italic" in p)), regular_path)
         font_cache: dict = {}
 
-        def get_font(size: int, style: str = "normal"):
+        def _needs_unicode(s: str) -> bool:
+            if not s:
+                return False
+            for c in s:
+                if ord(c) > 127:
+                    return True
+            return False
+
+        def get_font(size: int, style: str = "normal", text: Optional[str] = None):
             size = max(8, min(72, int(size)))
-            key = (size, style)
+            use_unicode = text and unicode_font_path and _needs_unicode(text)
+            path = (unicode_font_path if use_unicode else
+                    (bold_path if style == "bold" else italic_path if style == "italic" else regular_path))
+            key = (size, style, "unicode" if use_unicode else "latin")
             if key in font_cache:
                 return font_cache[key]
-            path = bold_path if style == "bold" else italic_path if style == "italic" else regular_path
             try:
                 f = ImageFont.truetype(path, size=size) if path and os.path.exists(path) else ImageFont.load_default()
             except Exception:
@@ -203,7 +223,7 @@ def _overlay_fill(form_schema: dict, data: dict, output_path: str, partial: bool
             # Font size from box height: fill ~55% of box (works at any image resolution)
             fsize   = max(8, min(48, round(bh * 0.55)))
             fstyle  = (f.get("font_style") or "normal") if isinstance(f, dict) else "normal"
-            field_font = get_font(fsize, fstyle)
+            field_font = get_font(fsize, fstyle, text=str(val) if val else None)
             fcolor  = _hex_to_rgb(f.get("font_color", "#0D3D3A") if isinstance(f, dict) else "#0D3D3A")
             align_h = f.get("text_align_h", "left") if isinstance(f, dict) else "left"
             align_v = f.get("text_align_v", "top") if isinstance(f, dict) else "top"

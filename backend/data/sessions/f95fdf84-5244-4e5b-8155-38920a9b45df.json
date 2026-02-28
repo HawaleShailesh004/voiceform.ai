@@ -1,0 +1,16 @@
+{
+  "session_id": "f95fdf84-5244-4e5b-8155-38920a9b45df",
+  "form_id": "b06b700a-3326-4a3f-acb6-55b49fc8b79e",
+  "created_at": "2026-02-28T19:27:07.331912",
+  "status": "active",
+  "collected": {},
+  "chat_history": [
+    {
+      "role": "assistant",
+      "content": "Hey there! I'm glad you're here and ready to get started with your physical examination form. I'll be guiding you through this, making it as quick and smooth as possible. Let's kick things off—could you share the date with me?"
+    }
+  ],
+  "progress": 0,
+  "lang": "en",
+  "last_asked_field": null
+}

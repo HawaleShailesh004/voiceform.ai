@@ -1,0 +1,16 @@
+{
+  "session_id": "49f3e19d-14d3-46b4-97bc-9ea01e30605c",
+  "form_id": "b06b700a-3326-4a3f-acb6-55b49fc8b79e",
+  "created_at": "2026-02-28T19:27:07.301287",
+  "status": "active",
+  "collected": {},
+  "chat_history": [
+    {
+      "role": "assistant",
+      "content": "Hi there! I'm here to help you sail through filling out your Physical Examination Form with ease and speed. Let's kick things off, shall we? Could you please tell me today's date?"
+    }
+  ],
+  "progress": 0,
+  "lang": "en",
+  "last_asked_field": null
+}

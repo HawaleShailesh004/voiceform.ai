@@ -263,3 +263,44 @@ export const whatsappAPI = {
     return res.data
   },
 }
+
+/* ── Voice API (STT: Groq Whisper, TTS: Google) ───────────────────────── */
+
+export interface VoiceStatus {
+  stt_available: boolean
+  tts_available: boolean
+}
+
+export const audioAPI = {
+  /** Check if backend voice APIs are configured (no key validation). */
+  async status(): Promise<VoiceStatus> {
+    const res = await api.get<VoiceStatus>('/api/audio/status')
+    return res.data
+  },
+
+  /**
+   * Transcribe audio blob via Groq Whisper.
+   * @returns { text } or throws with response.data?.detail?.message and detail?.code
+   */
+  async transcribe(audioBlob: Blob, language?: string): Promise<{ text: string }> {
+    const form = new FormData()
+    form.append('file', audioBlob, 'audio.webm')
+    if (language) form.append('language', language)
+    const res = await api.post<{ text: string }>('/api/audio/transcribe', form, {
+      timeout: 65000,
+    })
+    return res.data
+  },
+
+  /**
+   * Synthesize text to speech via Google TTS. Returns MP3 blob.
+   * Use responseType 'arraybuffer' and create Blob from result.
+   */
+  async synthesize(text: string, lang = 'en'): Promise<Blob> {
+    const res = await api.post<ArrayBuffer>('/api/audio/synthesize', { text, lang }, {
+      responseType: 'arraybuffer',
+      timeout: 30000,
+    })
+    return new Blob([res.data], { type: 'audio/mpeg' })
+  },
+}
