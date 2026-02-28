@@ -324,14 +324,20 @@ def build_turn_context(form_schema: dict, collected: dict, lang: str) -> str:
         desc  = f.get("description") or f.get("purpose") or ""
         req   = "REQUIRED" if f.get("is_required") else "optional"
         rules = f.get("validation_rules", {})
+        children = f.get("children") or []
 
         val = collected.get(name)
         if val not in (None, "", "N/A", "SKIPPED"):
             filled.append(f"  ✓ {label}: {val}")
         else:
             rule_hint = _build_rule_hint(name, ftype, rules)
+            options_hint = ""
+            if children and ftype in ("radio", "checkbox"):
+                opt_labels = [c.get("label", "").strip() for c in children if c.get("label")]
+                if opt_labels:
+                    options_hint = f" | options: {', '.join(opt_labels)}"
             needed.append(
-                f"  • {name} | {label} | {ftype} | {req}{rule_hint}"
+                f"  • {name} | {label} | {ftype} | {req}{rule_hint}{options_hint}"
                 + (f" | {desc}" if desc else "")
             )
             # Only capture hint for the FIRST unfilled field
@@ -405,6 +411,86 @@ def _build_rule_hint(name: str, ftype: str, rules: dict) -> str:
     elif ftype == "date":
         return " [any date format OK]"
     return ""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EXTRACTION / VISION PROMPTS (used by extractor.py)
+# ─────────────────────────────────────────────────────────────────────────────
+
+VISION_PROMPT = """Analyse this form image and extract EVERY fillable field.
+
+Return ONLY valid JSON (no markdown, no preamble):
+{
+  "form_title": "<detected title or 'Unknown Form'>",
+  "fields": [
+    {
+      "field_name": "<unique_snake_case_id>",
+      "field_type": "text|checkbox|date|signature|radio|select|number|email",
+      "semantic_label": "<Human label e.g. First Name>",
+      "question_template": "<Natural question e.g. What is your full name?>",
+      "description": "<what goes here>",
+      "is_required": true|false,
+      "data_type": "name|email|phone|date|address|ssn|text|number",
+      "validation_rules": {}|{"type":"email"}|{"type":"phone"}|{"type":"pincode"},
+      "purpose": "<brief context>",
+      "bounding_box": {"xmin":0,"ymin":0,"xmax":0,"ymax":0},
+      "children": [
+        {
+          "field_name": "<parent_field>_<option_snake>",
+          "label": "<option label e.g. Male>",
+          "bounding_box": {"xmin":0,"ymin":0,"xmax":0,"ymax":0}
+        }
+      ]
+    }
+  ]
+}
+
+- bounding_box = the fillable area or, for radio/checkbox groups, the ENTIRE group area.
+- "children" is OPTIONAL. Only include for radio and checkbox GROUPS (multiple options).
+- For radio/checkbox groups: bounding_box = entire group (from first option to last).
+- children[] = each individual option with its own "label" and "bounding_box".
+- children[].bounding_box = the clickable circle or square ONLY, NOT the option label text.
+- children[].field_name = parent field_name + "_" + snake_case(label), e.g. gender_male, gender_female.
+- For a standalone single checkbox (one yes/no box): do NOT use children.
+
+BOUNDING BOX RULES — read carefully:
+- Scale: 0–1000. (0,0)=top-left corner of the image, (1000,1000)=bottom-right corner.
+- Include the ENTIRE input element — the visible box border, underline, or checkbox near of label
+  outline itself. Do NOT crop tightly to just the interior white space.
+- If the fillable area is just underline place the box at bottom attached
+- xmin: left edge of the input box/underline (NOT the label to its left)
+- ymin: top edge of the input box (include the top border line if visible)
+- xmax: right edge of the input box
+- ymax: bottom edge of the input box (include the bottom border/underline)
+- For a single checkbox: bounding_box = the checkbox square itself, not the label next to it.
+- NEVER let xmin bleed into the label text to the left of the box.
+- When in doubt, make the box SLIGHTLY LARGER rather than smaller — text must fit inside.
+
+OTHER RULES:
+- field_name: unique, lowercase, snake_case. Duplicates → append _1, _2.
+- For name fields: use separate first_name, middle_name, last_name if form has
+  separate boxes. If single name box → use full_name.
+- is_required: true if asterisk (*), "required", bold label, or clear convention.
+- Be EXHAUSTIVE — find every single fillable field, even small date boxes."""
+
+ACROFORM_LABEL_PROMPT = """This PDF form has {field_count} fillable fields marked with red numbered circles.
+
+For each numbered field, return ONLY valid JSON array:
+[
+  {{
+    "index": 1,
+    "semantic_label": "Full Name",
+    "field_type": "text|checkbox|radio|select",
+    "question_template": "What is your full name?",
+    "is_required": true,
+    "description": "Legal full name of applicant",
+    "purpose": "Identify the applicant",
+    "data_type": "name",
+    "validation_rules": {{}}
+  }}
+]
+
+Numbers to label: {field_numbers}"""
 
 
 def _get_field_hint(field: dict) -> str | None:

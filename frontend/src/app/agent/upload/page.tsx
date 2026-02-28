@@ -5,13 +5,13 @@ import { useRouter } from 'next/navigation'
 import { useDropzone } from 'react-dropzone'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { Upload, FileText, Image, Layers, ArrowLeft, Sparkles, CheckCircle, ArrowRight } from 'lucide-react'
+import { Upload, FileText, Image, Layers, ArrowLeft, Sparkles, CheckCircle, ArrowRight, RefreshCw } from 'lucide-react'
 import AgentNav from '@/components/shared/AgentNav'
 import FormHealthScore, { type HealthScore } from '@/components/shared/FormHealthScore'
 import { formAPI } from '@/lib/api'
 import clsx from 'clsx'
 
-type Stage = 'idle' | 'uploading' | 'extracting' | 'done'
+type Stage = 'idle' | 'uploading' | 'extracting' | 'done' | 'error'
 
 const STAGES = [
   { id: 'uploading',  label: 'Uploading your form',     sub: 'Sending securely to Vaarta…' },
@@ -145,16 +145,16 @@ export default function UploadPage() {
   const [stage, setStage]         = useState<Stage>('idle')
   const [pct, setPct]             = useState(0)
   const [file, setFile]           = useState<File | null>(null)
+  const [error, setError]         = useState<string | null>(null)
   const [result, setResult]       = useState<{
     formId: string; fieldCount: number; formTitle: string; health: HealthScore | null
   } | null>(null)
 
-  const onDrop = useCallback(async (files: File[]) => {
-    const f = files[0]
-    if (!f) return
+  const runUpload = useCallback(async (f: File) => {
     setFile(f)
     setStage('uploading')
     setResult(null)
+    setError(null)
 
     try {
       const res = await formAPI.upload(f, p => {
@@ -170,16 +170,33 @@ export default function UploadPage() {
       setStage('done')
       toast.success(`${res.field_count} fields found in "${res.form_title}"`)
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail || 'Upload failed — please try again.')
-      setStage('idle')
+      const msg = err?.response?.data?.detail || 'Field extraction failed. Please try again.'
+      setError(msg)
+      setStage('error')
+      toast.error(msg)
     }
   }, [])
+
+  const onDrop = useCallback((files: File[]) => {
+    const f = files[0]
+    if (!f) return
+    runUpload(f)
+  }, [runUpload])
+
+  const handleRetry = useCallback(() => {
+    if (file) {
+      runUpload(file)
+    } else {
+      setError(null)
+      setStage('idle')
+    }
+  }, [file, runUpload])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'application/pdf': ['.pdf'], 'image/png': ['.png'], 'image/jpeg': ['.jpg', '.jpeg'] },
     maxFiles: 1,
-    disabled: stage !== 'idle',
+    disabled: stage !== 'idle' && stage !== 'error',
   })
 
   const handleProceed = () => {
@@ -259,6 +276,24 @@ export default function UploadPage() {
                   </div>
                 </motion.div>
 
+              ) : stage === 'error' ? (
+                <motion.div key="error" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                  className="card p-8 text-center space-y-4">
+                  <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center mx-auto">
+                    <RefreshCw size={24} className="text-error" />
+                  </div>
+                  <h3 className="font-body font-semibold text-ink">Extraction failed</h3>
+                  <p className="text-ink-muted text-sm font-body max-w-md mx-auto">{error}</p>
+                  <div className="flex flex-wrap gap-3 justify-center">
+                    <button type="button" onClick={handleRetry} className="btn-primary">
+                      <RefreshCw size={16} />
+                      Retry
+                    </button>
+                    <button type="button" onClick={() => { setError(null); setStage('idle'); setFile(null); }} className="btn-secondary">
+                      Choose another file
+                    </button>
+                  </div>
+                </motion.div>
               ) : stage === 'done' && result ? (
                 <motion.div key="result" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                   <ResultCard

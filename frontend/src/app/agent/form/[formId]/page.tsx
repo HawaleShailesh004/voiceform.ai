@@ -26,12 +26,14 @@ import {
   ChevronRight,
   Search,
   X,
+  MessageCircle,
+  Heart,
 } from "lucide-react";
 import AgentNav from "@/components/shared/AgentNav";
 import ShareModal from "@/components/shared/ShareModal";
 import FormHealthScore, { type HealthScore } from "@/components/shared/FormHealthScore";
-import { formAPI, fillAPI, type Session } from "@/lib/api";
-import { Heart } from "lucide-react";
+import WhatsAppModal from "@/components/shared/WhatsAppModal";
+import { formAPI, fillAPI, whatsappAPI, type Session } from "@/lib/api";
 import clsx from "clsx";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -54,12 +56,16 @@ function SessionRow({
   form,
   dlId,
   onDownload,
+  onWhatsApp,
+  waConfigured,
   index,
 }: {
   s: Session;
   form: any;
   dlId: string | null;
   onDownload: (sid: string) => void;
+  onWhatsApp?: (sid: string) => void;
+  waConfigured?: boolean;
   index: number;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -172,18 +178,30 @@ function SessionRow({
         {/* Action */}
         <div className="flex items-center gap-2">
           {done ? (
-            <button
-              onClick={() => onDownload(s.session_id)}
-              disabled={dlId === s.session_id}
-              className="btn-primary btn-sm"
-            >
-              {dlId === s.session_id ? (
-                <RefreshCw size={11} className="animate-spin" />
-              ) : (
-                <Download size={11} />
+            <>
+              {waConfigured && onWhatsApp && (
+                <button
+                  type="button"
+                  onClick={() => onWhatsApp(s.session_id)}
+                  title="Send PDF via WhatsApp"
+                  className="p-1.5 rounded-md hover:bg-emerald-50 text-emerald-600 transition-colors"
+                >
+                  <MessageCircle size={14} />
+                </button>
               )}
-              PDF
-            </button>
+              <button
+                onClick={() => onDownload(s.session_id)}
+                disabled={dlId === s.session_id}
+                className="btn-primary btn-sm"
+              >
+                {dlId === s.session_id ? (
+                  <RefreshCw size={11} className="animate-spin" />
+                ) : (
+                  <Download size={11} />
+                )}
+                PDF
+              </button>
+            </>
           ) : (
             <span className="badge badge-teal">Active</span>
           )}
@@ -263,6 +281,9 @@ export default function FormDetailPage() {
   const [rightPanel, setRightPanel] = useState<"fields" | "analytics" | "health">("fields");
   const [healthScore, setHealthScore] = useState<HealthScore | null>(null);
   const [loadingHealth, setLoadingHealth] = useState(false);
+  const [waOpen, setWaOpen] = useState(false);
+  const [waSession, setWaSession] = useState<string | null>(null);
+  const [waConfigured, setWaConfigured] = useState(false);
 
   const loadHealth = useCallback(async () => {
     if (healthScore || loadingHealth) return;
@@ -302,6 +323,10 @@ export default function FormDetailPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    whatsappAPI.isConfigured().then(setWaConfigured);
+  }, []);
 
   const handleDownload = async (sid: string) => {
     setDlId(sid);
@@ -715,6 +740,11 @@ export default function FormDetailPage() {
                       form={form}
                       dlId={dlId}
                       onDownload={handleDownload}
+                      onWhatsApp={(sid) => {
+                        setWaSession(sid);
+                        setWaOpen(true);
+                      }}
+                      waConfigured={waConfigured}
                       index={i}
                     />
                   ))}
@@ -851,6 +881,20 @@ export default function FormDetailPage() {
         chatLink={chatLink}
         whatsappLink={waLink}
       />
+
+      {waSession && (
+        <WhatsAppModal
+          isOpen={waOpen}
+          onClose={() => {
+            setWaOpen(false);
+            setWaSession(null);
+          }}
+          sessionId={waSession}
+          formTitle={form?.form_title || ""}
+          lang="en"
+          alreadyFilled={true}
+        />
+      )}
     </div>
   );
 }

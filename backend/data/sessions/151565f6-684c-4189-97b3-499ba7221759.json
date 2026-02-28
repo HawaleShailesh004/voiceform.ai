@@ -1,0 +1,16 @@
+{
+  "session_id": "151565f6-684c-4189-97b3-499ba7221759",
+  "form_id": "12a47bbf-3239-4aef-860c-bbacad9711ce",
+  "created_at": "2026-02-26T15:20:21.713169",
+  "status": "active",
+  "collected": {},
+  "chat_history": [
+    {
+      "role": "assistant",
+      "content": "Hey there! I'm here to make filling out your Personal Information Form a breeze, so you can be on your way in no time. Let's get started—what's your name?"
+    }
+  ],
+  "progress": 0,
+  "lang": "en",
+  "last_asked_field": null
+}

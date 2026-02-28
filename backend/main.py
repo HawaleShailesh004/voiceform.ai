@@ -33,6 +33,9 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Vaarta API", version="3.0.0", docs_url="/docs")
 
+from dotenv import load_dotenv
+load_dotenv()
+
 ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -67,6 +70,11 @@ class FormUpdate(BaseModel):
 
 class SampleValuesRequest(BaseModel):
     fields: Optional[list] = None
+
+
+class WhatsAppDelivery(BaseModel):
+    phone: str
+    lang: str = "en"
 
 
 # ─────────────────────────────────────────────
@@ -165,6 +173,7 @@ async def upload_form(file: UploadFile = File(...)):
                                   "xmax": f.bounding_box.xmax, "ymax": f.bounding_box.ymax},
             "acro_field_name":   f.acro_field_name,
             "options":           f.options,
+            "children":          getattr(f, "children", None),
         }
         fields_list.append(fd)
 
@@ -208,6 +217,70 @@ async def upload_form(file: UploadFile = File(...)):
 # ─────────────────────────────────────────────
 # Forms — Read & Update
 # ─────────────────────────────────────────────
+
+@app.post("/api/forms/{form_id}/re-extract")
+async def re_extract_form(form_id: str):
+    """
+    Re-run field extraction on the stored original file and update the form's fields.
+    Use when extraction missed fields or you want to refresh fillable areas.
+    """
+    form = _require_form(form_id)
+    orig = store.original_path(form_id)
+    if not orig or not orig.exists():
+        raise HTTPException(404, "Original file not found. Re-upload the form to re-extract.")
+
+    try:
+        result: ExtractionResult = extractor.extract(str(orig))
+    except Exception as e:
+        logger.error(f"Re-extract error: {e}", exc_info=True)
+        raise HTTPException(500, f"Field extraction failed: {e}")
+
+    fields_list = []
+    for f in result.fields:
+        fd = f if isinstance(f, dict) else {
+            "field_name":        f.field_name,
+            "field_type":        f.field_type,
+            "semantic_label":    f.semantic_label,
+            "question_template": f.question_template,
+            "description":       f.description,
+            "is_required":       f.is_required,
+            "data_type":         f.data_type,
+            "validation_rules":  f.validation_rules,
+            "purpose":           f.purpose,
+            "bounding_box":      {"xmin": f.bounding_box.xmin, "ymin": f.bounding_box.ymin,
+                                  "xmax": f.bounding_box.xmax, "ymax": f.bounding_box.ymax},
+            "acro_field_name":   f.acro_field_name,
+            "options":           f.options,
+            "children":          getattr(f, "children", None),
+        }
+        fields_list.append(fd)
+
+    sample_values = getattr(result, "sample_values", None) or {}
+    from health_score import compute_health_score
+    health = compute_health_score(fields_list)
+
+    form["fields"] = fields_list
+    form["form_title"] = result.form_title
+    form["source_type"] = result.source_type
+    form["page_count"] = result.page_count
+    form["page_width"] = result.page_width
+    form["page_height"] = result.page_height
+    form["raw_image_b64"] = result.raw_image_b64
+    form["warnings"] = result.warnings
+    form["sample_values"] = sample_values
+    form["health_score"] = health
+    store.save_form(form_id, form)
+
+    return JSONResponse({
+        "form_id":       form_id,
+        "form_title":    form["form_title"],
+        "field_count":   len(fields_list),
+        "fields":        fields_list,
+        "warnings":      result.warnings,
+        "preview_image": f"data:image/png;base64,{result.raw_image_b64}" if result.raw_image_b64 else None,
+        "health_score":  health,
+    })
+
 
 @app.get("/api/forms/{form_id}")
 async def get_form(form_id: str):
@@ -585,7 +658,14 @@ async def chat(msg: ChatMessage):
         raise HTTPException(500, f"Chat processing failed: {e}")
 
     # Merge extracted values
-    for k, v in result.get("extracted", {}).items():
+    extracted = result.get("extracted", {}) or {}
+    wa_phone = extracted.pop("_whatsapp_phone", None)
+    if wa_phone and wa_phone != "__SKIP__":
+        session["whatsapp_phone"] = wa_phone
+    elif wa_phone == "__SKIP__":
+        session["whatsapp_phone"] = "__SKIP__"
+
+    for k, v in extracted.items():
         existing = session["collected"].get(k)
         if v == "SKIPPED" and existing not in (None, "", "N/A"):
             continue
@@ -612,6 +692,40 @@ async def chat(msg: ChatMessage):
     session["progress"]  = round(filled / total * 100) if total else 0
 
     store.save_session(msg.session_id, session)
+
+    # If form just completed and we have a WhatsApp number, generate PDF and send (no need to click Download)
+    if session.get("whatsapp_phone") and session["whatsapp_phone"] != "__SKIP__":
+        from whatsapp_delivery import is_configured
+        if is_configured():
+            import asyncio
+            async def _generate_and_send_wa():
+                try:
+                    sess = store.load_session(msg.session_id)
+                    if not sess or not sess.get("whatsapp_phone") or sess.get("whatsapp_phone") == "__SKIP__":
+                        return
+                    f = store.load_form(sess["form_id"])
+                    if not f:
+                        return
+                    from fillback import fill_form_pdf
+                    out = await fill_form_pdf(
+                        form_schema=f,
+                        collected_data=sess["collected"],
+                        session_id=msg.session_id,
+                        partial=False,
+                    )
+                    sess["filled_pdf_path"] = out
+                    store.save_session(msg.session_id, sess)
+                    from whatsapp_delivery import send_whatsapp_pdf
+                    await send_whatsapp_pdf(
+                        phone=sess["whatsapp_phone"],
+                        pdf_path=out,
+                        form_title=f.get("form_title", "your form"),
+                        session_id=msg.session_id,
+                        lang=sess.get("lang", "en"),
+                    )
+                except Exception as e:
+                    logger.error(f"WhatsApp auto-send after completion: {e}", exc_info=True)
+            asyncio.create_task(_generate_and_send_wa())
 
     return JSONResponse({
         "reply":         result["reply"],
@@ -649,10 +763,37 @@ async def fill_form(session_id: str, partial: bool = Query(False)):
         logger.error(f"Fillback failed: {e}", exc_info=True)
         raise HTTPException(500, f"Fill-back failed: {e}")
 
+    session["filled_pdf_path"] = output
+    logger.info("fill_form: PDF generated session_id=%s partial=%s path=%s", session_id, partial, output)
     if not partial:
-        session["status"]          = "completed"
-        session["filled_pdf_path"] = output
-        store.save_session(session_id, session)
+        session["status"] = "completed"
+        phone = session.get("whatsapp_phone")
+        if phone and phone != "__SKIP__":
+            from whatsapp_delivery import send_whatsapp_pdf, is_configured
+            if is_configured():
+                import asyncio
+                asyncio.create_task(send_whatsapp_pdf(
+                    phone=phone,
+                    pdf_path=output,
+                    form_title=form.get("form_title", "your form"),
+                    session_id=session_id,
+                    lang=session.get("lang", "en"),
+                ))
+    # Always send a copy to VAARTA_ALWAYS_SEND_TO when set (e.g. +919321556764)
+    always_send_to = os.environ.get("VAARTA_ALWAYS_SEND_TO", "").strip()
+    if always_send_to:
+        from whatsapp_delivery import send_whatsapp_pdf, is_configured
+        if is_configured():
+            import asyncio
+            logger.info("fill_form: also sending PDF to VAARTA_ALWAYS_SEND_TO=%s", always_send_to)
+            asyncio.create_task(send_whatsapp_pdf(
+                phone=always_send_to,
+                pdf_path=output,
+                form_title=form.get("form_title", "your form"),
+                session_id=session_id,
+                lang=session.get("lang", "en"),
+            ))
+    store.save_session(session_id, session)
 
     original_name = form.get("original_filename", "form.pdf")
     suffix = "partial_" if partial else "filled_"
@@ -661,6 +802,58 @@ async def fill_form(session_id: str, partial: bool = Query(False)):
         media_type="application/pdf",
         filename=f"vaarta_{suffix}{original_name}",
     )
+
+
+@app.post("/api/sessions/{session_id}/whatsapp")
+async def send_whatsapp(session_id: str, body: WhatsAppDelivery):
+    """
+    Manually trigger WhatsApp delivery of the filled PDF.
+    If already filled, sends immediately; otherwise stores phone and sends when fill is triggered.
+    """
+    session = _require_session(session_id)
+    form    = _require_form(session["form_id"])
+
+    session["whatsapp_phone"] = body.phone
+    if body.lang:
+        session["lang"] = body.lang
+    store.save_session(session_id, session)
+
+    filled_path = session.get("filled_pdf_path")
+    if filled_path and Path(filled_path).exists():
+        from whatsapp_delivery import send_whatsapp_pdf, is_configured
+        if not is_configured():
+            raise HTTPException(503, "WhatsApp not configured. Set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN.")
+        result = await send_whatsapp_pdf(
+            phone=body.phone,
+            pdf_path=filled_path,
+            form_title=form.get("form_title", "your form"),
+            session_id=session_id,
+            lang=body.lang or session.get("lang", "en"),
+        )
+        if not result["success"]:
+            raise HTTPException(500, f"WhatsApp send failed: {result['error']}")
+        return JSONResponse({"status": "sent", "to": result["to"], "message_sid": result["message_sid"]})
+
+    return JSONResponse({"status": "scheduled", "message": "Phone saved. PDF will be sent when form is completed."})
+
+
+@app.get("/api/sessions/{session_id}/filled-pdf")
+async def serve_filled_pdf(session_id: str):
+    """Public endpoint for Twilio to fetch the filled PDF. No auth."""
+    session = _require_session(session_id)
+    filled  = session.get("filled_pdf_path")
+    if not filled or not Path(filled).exists():
+        raise HTTPException(404, "Filled PDF not available yet")
+    return FileResponse(filled, media_type="application/pdf", filename="filled-form.pdf")
+
+
+@app.get("/api/whatsapp/status")
+async def whatsapp_status():
+    """Frontend uses this to know whether to show the WhatsApp option."""
+    from whatsapp_delivery import is_configured
+    configured = is_configured()
+    logger.info("whatsapp_status: configured=%s", configured)
+    return JSONResponse({"configured": configured})
 
 
 # ─────────────────────────────────────────────

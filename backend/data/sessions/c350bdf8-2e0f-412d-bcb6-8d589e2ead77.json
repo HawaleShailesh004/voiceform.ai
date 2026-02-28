@@ -1,0 +1,54 @@
+{
+  "session_id": "c350bdf8-2e0f-412d-bcb6-8d589e2ead77",
+  "form_id": "1ff8297f-2dea-451f-8822-7b5b1ba5dc34",
+  "created_at": "2026-02-28T07:02:49.658806",
+  "status": "active",
+  "collected": {
+    "branch_name": "shree nagar",
+    "applicant_1_name": "Shailesh",
+    "applicant_1_dob": "04/12/2004",
+    "applicant_1_gender": "Male"
+  },
+  "chat_history": [
+    {
+      "role": "assistant",
+      "content": "Hey there, it's great to have you here! Let's make this account opening process quick and breezy for you. To get started, could you please share the Branch Name where you’d like to open your savings account?"
+    },
+    {
+      "role": "user",
+      "content": "shree nagar"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for sharing! Now, let's gather some details about you. What's your full name and date of birth?"
+    },
+    {
+      "role": "user",
+      "content": "shailesh, 4/12/2004"
+    },
+    {
+      "role": "assistant",
+      "content": "Got it, Shailesh! If you're comfortable sharing, could you also let me know your gender?"
+    },
+    {
+      "role": "user",
+      "content": "male"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for confirming that, Shailesh! If you have a second applicant, could you share their full name and date of birth as well? If not, we can move on to the next step."
+    },
+    {
+      "role": "user",
+      "content": "no"
+    },
+    {
+      "role": "assistant",
+      "content": "No problem, Shailesh. Let's move forward. Do you happen to know the date when you opened the account? If not, we can skip it for now."
+    }
+  ],
+  "progress": 12,
+  "lang": "en",
+  "last_asked_field": null,
+  "updated_at": "2026-02-28T07:04:24.034653"
+}

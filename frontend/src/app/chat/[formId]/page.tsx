@@ -1,15 +1,17 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import {
   Send, Mic, MicOff, CheckCircle, ChevronDown,
   MessageSquareText, Paperclip, X, FileText, Image as ImageIcon,
-  Download
+  Download, MessageCircle, Loader2
 } from 'lucide-react'
-import { sessionAPI, chatAPI, fillAPI, type ChatResponse } from '@/lib/api'
+import { sessionAPI, chatAPI, fillAPI, whatsappAPI, type ChatResponse } from '@/lib/api'
+import WhatsAppModal from '@/components/shared/WhatsAppModal'
 import clsx from 'clsx'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -237,15 +239,155 @@ function FilePicker({
   )
 }
 
+/* ── Get PDF popup (mobile no → send via WhatsApp or download) ── */
+function GetPDFModal({
+  isOpen,
+  onClose,
+  sessionId,
+  lang,
+  isPartial,
+  onSent,
+  onDownloadInstead,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  sessionId: string
+  lang: Lang
+  isPartial?: boolean
+  onSent?: () => void
+  onDownloadInstead?: () => void
+}) {
+  const [phone, setPhone] = useState('')
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+  const isHindi = lang === 'hi'
+
+  const handleGetPDF = async () => {
+    const digits = phone.replace(/\D/g, '')
+    const clean = digits.startsWith('91') && digits.length === 12 ? digits.slice(2) : digits
+    if (!/^[6-9]\d{9}$/.test(clean)) {
+      setError(isHindi ? 'कृपया 10 अंकों का सही मोबाइल नंबर डालें' : 'Please enter a valid 10-digit Indian mobile number')
+      return
+    }
+    setError('')
+    setSending(true)
+    try {
+      await fillAPI.fill(sessionId, isPartial ?? false)
+      const res = await whatsappAPI.send(sessionId, clean, lang)
+      toast.success(res.status === 'sent' ? (isHindi ? 'भेज दिया! ✅' : 'Sent! ✅') : (isHindi ? 'नंबर सेव। जल्द भेजा जाएगा।' : 'Number saved. Will be sent shortly.'))
+      onSent?.()
+      onClose()
+    } catch (e: any) {
+      setError(e.response?.data?.detail || e.message || 'Something went wrong')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const handleDownloadInstead = () => {
+    onClose()
+    setPhone('')
+    setError('')
+    onDownloadInstead?.()
+  }
+
+  useEffect(() => {
+    if (!isOpen) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [isOpen])
+
+  if (!isOpen) return null
+  const content = (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm"
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+        className="fixed left-0 right-0 bottom-0 z-[101] max-h-[85vh] overflow-auto p-4 pt-0 sm:left-1/2 sm:right-auto sm:bottom-auto sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:max-w-sm sm:max-h-none sm:p-4"
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
+      >
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-teal/10 mx-auto max-w-sm">
+          <div className="px-4 py-3 sm:px-5 sm:py-4 border-b border-teal/8 flex items-center justify-between gap-2 min-h-[52px]" style={{ backgroundColor: '#25D366' }}>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <MessageCircle size={22} className="text-white flex-shrink-0" />
+              <span className="font-body font-semibold text-white text-sm sm:text-base truncate">
+                {isHindi ? 'किस नंबर पर भेजें?' : 'Send to which number?'}
+              </span>
+            </div>
+            <button type="button" onClick={onClose} className="flex-shrink-0 text-white/90 hover:text-white p-2 -m-2 touch-manipulation" aria-label="Close">
+              <X size={20} />
+            </button>
+          </div>
+          <div className="p-4 sm:p-5">
+            <p className="text-ink-muted text-sm font-body mb-4">
+              {isHindi ? 'वह नंबर डालें जिस पर WhatsApp पर मैसेज भेजना है। (फ़ॉर्म का नंबर नहीं लिया जाता।)' : 'Enter the number to receive the message on WhatsApp. (We don’t use the number from the form.)'}
+            </p>
+            <div className="flex items-center gap-2 rounded-xl border border-teal/15 bg-cream/40 px-3 py-3 mb-3 min-h-[48px]">
+              <span className="text-ink-faint text-sm font-mono">+91</span>
+              <input
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel-national"
+                value={phone}
+                onChange={e => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 10)); setError('') }}
+                placeholder="9876543210"
+                className="flex-1 bg-transparent text-ink font-body text-base outline-none placeholder:text-ink-faint min-w-0"
+                aria-label={isHindi ? 'मोबाइल नंबर' : 'Mobile number'}
+              />
+            </div>
+            {error && <p className="text-error text-xs font-body mb-3">{error}</p>}
+            <button
+              type="button"
+              onClick={handleGetPDF}
+              disabled={sending || phone.replace(/\D/g, '').length < 10}
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-semibold text-sm disabled:opacity-50 min-h-[48px] touch-manipulation"
+              style={{ backgroundColor: '#25D366' }}
+            >
+              {sending ? <Loader2 size={20} className="animate-spin" /> : <Send size={18} />}
+              {sending ? (isHindi ? 'भेज रहे हैं…' : 'Sending…') : (isHindi ? 'भेजें' : 'Send')}
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadInstead}
+              className="w-full mt-3 py-3 text-ink-muted hover:text-teal text-sm font-body transition-colors touch-manipulation min-h-[44px]"
+            >
+              {isHindi ? 'डाउनलोड करें (डिवाइस पर)' : 'Download to device instead'}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  )
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : content
+}
+
 /* ── Completion card ───────────────────────────────── */
 function DoneCard({
   collected,
   sessionId,
   lang,
+  waConfigured,
+  onOpenWhatsApp,
+  onOpenGetPDF,
+  onDownloadDirect,
 }: {
   collected: Record<string, any>
   sessionId: string
   lang: Lang
+  waConfigured?: boolean
+  onOpenWhatsApp?: () => void
+  onOpenGetPDF?: () => void
+  onDownloadDirect?: () => void
 }) {
   const [downloading, setDownloading] = useState(false)
 
@@ -254,14 +396,16 @@ function DoneCard({
     ? { title: 'बधाई हो! 🎉', sub: 'आपका फ़ॉर्म भर गया है।', dl: 'भरा हुआ फ़ॉर्म डाउनलोड करें' }
     : { title: 'All done! 🎉', sub: 'Your form is ready.', dl: 'Download filled form' }
 
-  const handleDownload = async () => {
-    setDownloading(true)
-    try {
-      const blob = await fillAPI.fill(sessionId)
-      fillAPI.download(blob, 'vaarta-filled.pdf')
-      toast.success('Downloaded!')
-    } catch { toast.error('Download failed') }
-    finally { setDownloading(false) }
+  const handleDownloadClick = () => {
+    console.log('[Vaarta] DoneCard Download clicked', { waConfigured, hasOnOpenGetPDF: !!onOpenGetPDF })
+    if (waConfigured && onOpenGetPDF) {
+      console.log('[Vaarta] Opening Get PDF modal from DoneCard')
+      onOpenGetPDF()
+    } else {
+      console.log('[Vaarta] Direct download from DoneCard')
+      setDownloading(true)
+      Promise.resolve(onDownloadDirect?.()).finally(() => setDownloading(false))
+    }
   }
 
   return (
@@ -294,17 +438,30 @@ function DoneCard({
         </div>
       )}
 
-      <button
-        onClick={handleDownload}
-        disabled={downloading}
-        className="btn-primary w-full justify-center"
-      >
-        {downloading
-          ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          : <ChevronDown size={14} />
-        }
-        {t.dl}
-      </button>
+      <div className="flex flex-col sm:flex-row gap-2">
+        {waConfigured && onOpenWhatsApp && (
+          <button
+            type="button"
+            onClick={onOpenWhatsApp}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-semibold"
+            style={{ backgroundColor: '#25D366' }}
+          >
+            <MessageCircle size={16} />
+            Get PDF on WhatsApp
+          </button>
+        )}
+        <button
+          onClick={handleDownloadClick}
+          disabled={downloading}
+          className="btn-primary flex-1 justify-center"
+        >
+          {downloading
+            ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            : <ChevronDown size={14} />
+          }
+          {t.dl}
+        </button>
+      </div>
     </motion.div>
   )
 }
@@ -331,6 +488,10 @@ export default function ChatPage() {
   const [error, setError]             = useState('')
   const [showFilePicker, setShowFilePicker] = useState(false)
   const [partialDl, setPartialDl]     = useState(false)
+  const [waOpen, setWaOpen]           = useState(false)
+  const [waConfigured, setWaConfigured] = useState(false)
+  const [getPDFModalOpen, setGetPDFModalOpen] = useState(false)
+  const [getPDFModalPartial, setGetPDFModalPartial] = useState(false)
 
   const scrollRef  = useRef<HTMLDivElement>(null)
   const inputRef   = useRef<HTMLInputElement>(null)
@@ -339,6 +500,13 @@ export default function ChatPage() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [msgs, sending])
+
+  useEffect(() => {
+    whatsappAPI.isConfigured().then((configured) => {
+      console.log('[Vaarta] WhatsApp configured?', configured)
+      setWaConfigured(configured)
+    })
+  }, [])
 
   // Init: resume or create
   useEffect(() => {
@@ -490,13 +658,20 @@ export default function ChatPage() {
     if (!sid) return
     setPartialDl(true)
     try {
-      const res = await fetch(`${BASE}/api/sessions/${sid}/fill?partial=true`, { method: 'POST' })
-      if (!res.ok) throw new Error()
-      const blob = await res.blob()
+      const blob = await fillAPI.fill(sid, true)
       fillAPI.download(blob, 'vaarta-partial.pdf')
       toast.success(lang === 'hi' ? 'आंशिक फ़ॉर्म डाउनलोड हो गया!' : 'Partial form downloaded!')
     } catch { toast.error('Download failed') }
     finally { setPartialDl(false) }
+  }
+
+  const handleDownloadDirect = async () => {
+    if (!sessionId) return
+    try {
+      const blob = await fillAPI.fill(sessionId, false)
+      fillAPI.download(blob, 'vaarta-filled.pdf')
+      toast.success('Downloaded!')
+    } catch { toast.error('Download failed') }
   }
 
   const handleVoice  = useCallback((t: string) => { setInput(t); inputRef.current?.focus() }, [])
@@ -550,20 +725,28 @@ export default function ChatPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Partial download button — visible when partially filled */}
-              {filledCount > 0 && !done && (
+              {/* Get PDF — ask which number to send (works for partial or complete) */}
+              {filledCount > 0 && (
                 <button
-                  onClick={handlePartialDownload}
+                  onClick={() => {
+                    console.log('[Vaarta] Get PDF clicked', { waConfigured, done, filledCount })
+                    if (waConfigured) {
+                      console.log('[Vaarta] Opening Get PDF modal (partial=', !done, ')')
+                      setGetPDFModalOpen(true)
+                      setGetPDFModalPartial(!done)
+                    } else {
+                      console.log('[Vaarta] WhatsApp not configured — direct download')
+                      if (done) handleDownloadDirect()
+                      else handlePartialDownload()
+                    }
+                  }}
                   disabled={partialDl}
-                  title={lang === 'hi' ? 'अभी तक का फ़ॉर्म डाउनलोड करें' : 'Download progress so far'}
+                  title={done ? (lang === 'hi' ? 'PDF किस नंबर पर भेजें?' : 'Send PDF to which number?') : (lang === 'hi' ? 'आंशिक PDF किस नंबर पर भेजें?' : 'Send partial PDF to which number?')}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/8 border border-white/12 text-cream/60 hover:text-cream hover:border-white/25 transition-all text-[11px]"
                 >
-                  {partialDl
-                    ? <div className="w-3 h-3 border border-cream/40 border-t-cream rounded-full animate-spin" />
-                    : <Download size={11} />
-                  }
+                  {waConfigured ? <MessageCircle size={11} /> : <Download size={11} />}
                   <span className="hidden sm:inline">
-                    {lang === 'hi' ? 'आंशिक PDF' : 'Partial PDF'}
+                    {done ? (lang === 'hi' ? 'PDF भेजें' : 'Get PDF') : (lang === 'hi' ? 'आंशिक PDF' : 'Partial PDF')}
                   </span>
                 </button>
               )}
@@ -611,9 +794,45 @@ export default function ChatPage() {
             {msgs.map(m => <Bubble key={m.id} msg={m} />)}
             {(sending || uploading) && <Typing key="typing" />}
           </AnimatePresence>
-          {done && <DoneCard collected={collected} sessionId={sessionId!} lang={lang} />}
+          {done && (
+            <>
+              <DoneCard
+                collected={collected}
+                sessionId={sessionId!}
+                lang={lang}
+                waConfigured={waConfigured}
+                onOpenWhatsApp={() => setWaOpen(true)}
+                onOpenGetPDF={() => { setGetPDFModalOpen(true); setGetPDFModalPartial(false) }}
+                onDownloadDirect={handleDownloadDirect}
+              />
+              <WhatsAppModal
+                isOpen={waOpen}
+                onClose={() => setWaOpen(false)}
+                sessionId={sessionId!}
+                formTitle={formTitle}
+                lang={lang}
+                alreadyFilled={true}
+              />
+            </>
+          )}
         </div>
       </div>
+
+      {/* Get PDF modal — used for both partial (header) and complete (DoneCard) */}
+      {sessionId && (
+        <GetPDFModal
+          isOpen={getPDFModalOpen}
+          onClose={() => setGetPDFModalOpen(false)}
+          sessionId={sessionId}
+          lang={lang}
+          isPartial={getPDFModalPartial}
+          onDownloadInstead={() => {
+            setGetPDFModalOpen(false)
+            if (getPDFModalPartial) handlePartialDownload()
+            else handleDownloadDirect()
+          }}
+        />
+      )}
 
       {/* ── Input bar ── */}
       {!done && (

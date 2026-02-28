@@ -187,6 +187,33 @@ async def run_chat_turn(
 
     history.append({"role": "assistant", "content": reply})
 
+    # ── WhatsApp phone collection ──────────────────────────────────────
+    from whatsapp_delivery import is_configured
+    if is_complete and is_configured():
+        phone_stored = session.get("whatsapp_phone")
+        if not phone_stored:
+            phone_from_msg = _extract_phone_from_message(user_message)
+            if phone_from_msg:
+                session["whatsapp_phone"] = phone_from_msg
+                extracted["_whatsapp_phone"] = phone_from_msg
+            else:
+                is_complete = False
+                if lang == "hi":
+                    reply = (
+                        "बहुत बढ़िया! 🎉 आपका फ़ॉर्म लगभग तैयार है।\n\n"
+                        "क्या आप चाहेंगे कि भरा हुआ PDF आपके WhatsApp पर भेजा जाए? "
+                        "अगर हाँ, तो अपना WhatsApp नंबर बताएँ (10 अंक)। "
+                        "या 'नहीं' कहें — फिर आप सीधे डाउनलोड कर सकते हैं।"
+                    )
+                else:
+                    reply = (
+                        "Almost done! 🎉\n\n"
+                        "Would you like your completed PDF sent directly to your WhatsApp? "
+                        "If yes, share your WhatsApp number (10 digits). "
+                        "Or say 'skip' to just download it."
+                    )
+                history[-1]["content"] = reply
+
     return {
         "reply":             reply,
         "extracted":         extracted,
@@ -297,6 +324,22 @@ def _validate_extracted(extracted: dict, form_schema: dict) -> tuple[dict, list]
             else:
                 extracted[key] = tan_clean
 
+        # ── Radio/checkbox with children: value must match one of the option labels ──
+        elif ftype in ("radio", "checkbox"):
+            children = field.get("children") or []
+            if children:
+                val_lower = value.strip().lower()
+                matched_label = None
+                for c in children:
+                    lab = (c.get("label") or "").strip()
+                    if lab and lab.lower() == val_lower:
+                        matched_label = lab
+                        break
+                if matched_label is not None:
+                    extracted[key] = matched_label  # normalise to schema label
+                else:
+                    invalid.append(key)
+
     return extracted, invalid
 
 
@@ -321,11 +364,11 @@ def _clean_extracted(extracted: dict, form_schema: dict) -> dict:
             continue
         if isinstance(v, str) and v.lower() in ("yes", "true", "1", "haan", "ha", "✓"):
             field = next((f for f in form_schema["fields"] if f["field_name"] == k), {})
-            if field.get("field_type") == "checkbox":
+            if field.get("field_type") == "checkbox" and not (field.get("children")):
                 v = True
         elif isinstance(v, str) and v.lower() in ("no", "false", "0", "nahi", "na", "☐"):
             field = next((f for f in form_schema["fields"] if f["field_name"] == k), {})
-            if field.get("field_type") == "checkbox":
+            if field.get("field_type") == "checkbox" and not (field.get("children")):
                 v = False
         cleaned[k] = v
     return cleaned
@@ -435,3 +478,22 @@ def _detect_skip_intent(
                 break
 
     return extracted
+
+
+def _extract_phone_from_message(text: str) -> str | None:
+    """Extract Indian phone number from free text, or __SKIP__ if user declines."""
+    import re
+    t = text.replace(" ", "").replace("-", "")
+    patterns = [
+        r"\+91[\s\-]?([6-9]\d{9})",
+        r"\b91[\s\-]?([6-9]\d{9})\b",
+        r"\b([6-9]\d{9})\b",
+    ]
+    for pat in patterns:
+        m = re.search(pat, t)
+        if m:
+            return m.group(1) if m.lastindex else m.group(0)
+    skip_words = ["skip", "no", "nahi", "nahin", "nope", "later", "dont", "don't"]
+    if any(w in text.lower() for w in skip_words):
+        return "__SKIP__"
+    return None

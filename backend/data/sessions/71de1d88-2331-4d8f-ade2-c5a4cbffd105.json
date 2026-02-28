@@ -1,0 +1,129 @@
+{
+  "session_id": "71de1d88-2331-4d8f-ade2-c5a4cbffd105",
+  "form_id": "12a47bbf-3239-4aef-860c-bbacad9711ce",
+  "created_at": "2026-02-26T15:20:21.751517",
+  "status": "completed",
+  "collected": {
+    "name": "Shailesh Hawale",
+    "address": "Shree Nagar, Warli Pada, Thane, Maharashtra, 400604",
+    "mobile_number": "9321576788",
+    "email_address": "sh@gmail.com",
+    "next_of_kin_name": "Piyush Hawale",
+    "next_of_kin_mobile_number": "2822999999",
+    "relationship": "brother",
+    "bank_building_society": "bom bak",
+    "branch": "building ganesh krupa & located in shree nagar",
+    "sort_code": "378377",
+    "account_number": "282928929",
+    "driving_licence_checkbox": true,
+    "passport_birth_certificate_work_permit_checkbox": true,
+    "p45_or_p46_checkbox": true
+  },
+  "chat_history": [
+    {
+      "role": "assistant",
+      "content": "Hey there! I'm so glad you're here, and I promise we'll breeze through this form together—it'll be quick and painless. Let's get started with your name."
+    },
+    {
+      "role": "user",
+      "content": "shailesh hawale"
+    },
+    {
+      "role": "assistant",
+      "content": "Great, Shailesh! Thanks for sharing your name."
+    },
+    {
+      "role": "user",
+      "content": "ok"
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect! Now, let's move on to your address. Could you tell me your full home address, including the street, city, state, and pincode?"
+    },
+    {
+      "role": "user",
+      "content": "shree nagar, warli pada"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for providing part of your address, Shailesh! Could you also let me know the city, state, and pincode to complete it?"
+    },
+    {
+      "role": "user",
+      "content": "thane, maharashtra, 400604"
+    },
+    {
+      "role": "assistant",
+      "content": "Got it! Thanks for sharing your address: Shree Nagar, Warli Pada, Thane, Maharashtra, 400604."
+    },
+    {
+      "role": "user",
+      "content": "ok"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for confirming your address, Shailesh. Now, let's move on to your contact details. Could you please provide your mobile number and email address?"
+    },
+    {
+      "role": "user",
+      "content": "9321576788, sh@gmail.com"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for sharing your mobile number and email address, Shailesh! Now, let's talk about your emergency contact. Could you tell me the full name of your next of kin?"
+    },
+    {
+      "role": "user",
+      "content": "piyush hawale"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks, Shailesh! Could you also share Piyush's mobile number and your relationship with them (like sibling, parent, etc.)?"
+    },
+    {
+      "role": "user",
+      "content": "2822999999, he is my brother"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for that information, Shailesh! Now we have Piyush's mobile number and that he's your brother. \n\nLet's move on to your banking details. Could you share the name of your bank or building society and the branch location?"
+    },
+    {
+      "role": "user",
+      "content": "bom bak, building ganesh krupa & located in shree nagar"
+    },
+    {
+      "role": "assistant",
+      "content": "Thank you for sharing your bank name and branch location, Shailesh. Next, could you provide the sort code for your bank? It's a 6-digit number."
+    },
+    {
+      "role": "user",
+      "content": "378377"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks for providing the sort code. If you also have your bank account number handy, you can share it now, or we can skip it if you're not sure."
+    },
+    {
+      "role": "user",
+      "content": "282928929"
+    },
+    {
+      "role": "assistant",
+      "content": "Got it, thanks! We've covered quite a bit. Now, would you like to check off any of the following documents you're submitting for identification: Driving Licence, Passport, Birth Certificate, Work Permit, or P45/P46 tax document?"
+    },
+    {
+      "role": "user",
+      "content": "yes all of them"
+    },
+    {
+      "role": "assistant",
+      "content": "Thanks, Shailesh! I've noted that you're submitting all the documents for identification."
+    }
+  ],
+  "progress": 93,
+  "lang": "en",
+  "last_asked_field": "sort_code",
+  "updated_at": "2026-02-26T15:23:38.047167",
+  "filled_pdf_path": "data\\filled\\71de1d88-2331-4d8f-ade2-c5a4cbffd105.pdf"
+}

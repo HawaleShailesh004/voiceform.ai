@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import {
@@ -320,6 +320,30 @@ function BboxOverlay({
             onMouseDown={(e) => handleMouseDown(e, h.id)}
           />
         ))}
+
+      {/* Child option boxes (radio/checkbox groups) */}
+      {field.children?.map((child) => {
+        const cbb = child.bounding_box;
+        const pw = bb.xmax - bb.xmin || 1;
+        const ph = bb.ymax - bb.ymin || 1;
+        return (
+          <div
+            key={child.field_name}
+            className="absolute border border-blue-400/60 bg-blue-400/10 rounded-sm pointer-events-none"
+            style={{
+              left: `${((cbb.xmin - bb.xmin) / pw) * 100}%`,
+              top: `${((cbb.ymin - bb.ymin) / ph) * 100}%`,
+              width: `${((cbb.xmax - cbb.xmin) / pw) * 100}%`,
+              height: `${((cbb.ymax - cbb.ymin) / ph) * 100}%`,
+            }}
+            title={child.label}
+          >
+            <span className="absolute -top-4 left-0 text-[8px] text-blue-500 whitespace-nowrap">
+              {child.label}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -506,6 +530,20 @@ function FieldCard({
           <p className="text-ink-faint text-[11px] font-body italic leading-tight truncate">
             "{field.question_template}"
           </p>
+
+          {/* Option chips for radio/checkbox groups */}
+          {field.children && field.children.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {field.children.map((c) => (
+                <span
+                  key={c.field_name}
+                  className="px-1.5 py-0.5 bg-teal/8 rounded text-[10px] text-teal"
+                >
+                  {c.label}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Delete */}
@@ -843,9 +881,18 @@ function CoordinatesPopup({
 }
 
 /* ── Value overlay (sample values on same image) ───── */
+/** 0–1000 (per-mille) → 0–100 (%) for overlay positioning. Same scale as backend. */
 function toPct(n: number) {
   return n / 10;
 }
+
+/**
+ * Preview image and coordinates:
+ * - Backend sends the same image used for extraction (raw_image_b64 → preview_image).
+ * - Coordinates are stored as 0–1000 of page/image width and height (top-left origin).
+ * - We render at whatever size fits (max-w-full); overlay uses % so alignment is correct at any zoom.
+ * - Overlay container is the image wrapper (same size as <img>) so % is relative to the image.
+ */
 
 /* ── Main FieldEditor ──────────────────────────────── */
 
@@ -880,6 +927,18 @@ export default function FieldEditor({
   const [showCoordinatesModal, setShowCoordinatesModal] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   const [imgDims, setImgDims] = useState({ w: 800, h: 1000 });
+
+  // Keep imgDims in sync with actual rendered image size (fixes drag accuracy after layout/resize)
+  useEffect(() => {
+    const img = imgRef.current;
+    if (!img) return;
+    const updateDims = () => {
+      setImgDims({ w: img.offsetWidth, h: img.offsetHeight });
+    };
+    const ro = new ResizeObserver(updateDims);
+    ro.observe(img);
+    return () => ro.disconnect();
+  }, [previewImage]);
 
   const updateField = (i: number, updates: Partial<FormField>) => {
     const next = fields.map((f, idx) => (idx === i ? { ...f, ...updates } : f));
@@ -948,33 +1007,85 @@ export default function FieldEditor({
         <div className="p-4 flex justify-center">
           {previewImage ? (
             <div
-              className="relative inline-block shadow-lift rounded"
+              className="relative inline-block w-fit max-w-full shadow-lift rounded"
               style={{ maxWidth: "100%" }}
-              ref={imgRef as any}
             >
               <img
+                ref={imgRef}
                 src={previewImage}
                 alt="Form"
                 className="block max-w-full rounded"
-                style={{ userSelect: "none" }}
+                style={{ userSelect: "none", verticalAlign: "top" }}
                 draggable={false}
-                onLoad={(e) => {
-                  const img = e.target as HTMLImageElement;
-                  setImgDims({ w: img.offsetWidth, h: img.offsetHeight });
+                onLoad={() => {
+                  if (imgRef.current) {
+                    setImgDims({ w: imgRef.current.offsetWidth, h: imgRef.current.offsetHeight });
+                  }
                 }}
               />
-              {/* Sample values on same image (pointer-events-none so boxes stay draggable) */}
+              {/* Overlay matches image exactly (inset-0 = 100% of wrapper = image). % coords → any zoom OK. */}
               {livePreview && fields.length > 0 && (
-                <div className="absolute inset-0 z-0 pointer-events-none">
+                <div className="absolute inset-0 z-0 pointer-events-none box-border">
                   {fields.map((field) => {
                     const bb = field.bounding_box;
                     const val = sampleValues[field.field_name] ?? getSample(field);
                     if (val == null || val === "") return null;
+
+                    // Radio/checkbox group: render mark at each selected child's bbox
+                    if (field.children && field.children.length > 0) {
+                      const valStr = String(val).trim().toLowerCase();
+                      const isRadio = field.field_type === "radio";
+                      return (
+                        <React.Fragment key={field.field_name}>
+                          {field.children.map((child) => {
+                            const isSelected = valStr === child.label.trim().toLowerCase();
+                            if (!isSelected) return null;
+                            const cbb = child.bounding_box;
+                            const left = toPct(cbb.xmin);
+                            const top = toPct(cbb.ymin);
+                            const width = toPct(cbb.xmax - cbb.xmin);
+                            const height = toPct(cbb.ymax - cbb.ymin);
+                            const bhDisplay = (height / 100) * imgDims.h;
+                            const preferredSize = field.font_size ?? previewFontSize;
+                            const displaySize =
+                              preferredSize != null && preferredSize > 0
+                                ? Math.max(8, Math.min(72, Math.round(preferredSize)))
+                                : Math.max(8, Math.min(24, Math.round(bhDisplay * 0.7)));
+                            const mark = isRadio ? "●" : "✓";
+                            const color = field.font_color || "#0D3D3A";
+                            return (
+                              <div
+                                key={child.field_name}
+                                className="absolute flex items-center justify-center pointer-events-none box-border"
+                                style={{
+                                  left: `${left}%`,
+                                  top: `${top}%`,
+                                  width: `${width}%`,
+                                  height: `${height}%`,
+                                  fontSize: `${displaySize}px`,
+                                  lineHeight: 1,
+                                  color,
+                                  textShadow: "0 0 1px rgba(255,255,255,0.8), 0 1px 2px rgba(0,0,0,0.1)",
+                                }}
+                              >
+                                {mark}
+                              </div>
+                            );
+                          })}
+                        </React.Fragment>
+                      );
+                    }
+
                     const left = toPct(bb.xmin);
                     const top = toPct(bb.ymin);
                     const width = toPct(bb.xmax - bb.xmin);
                     const height = toPct(bb.ymax - bb.ymin);
-                    const size = field.font_size ?? previewFontSize;
+                    const bhDisplay = (height / 100) * imgDims.h;
+                    const preferredSize = field.font_size ?? previewFontSize;
+                    const displaySize =
+                      preferredSize != null && preferredSize > 0
+                        ? Math.max(8, Math.min(72, Math.round(preferredSize)))
+                        : Math.max(8, Math.min(48, Math.round(bhDisplay * 0.55)));
                     const style = field.font_style ?? previewFontStyle;
                     const color = field.font_color || "#0D3D3A";
                     const alignH = field.text_align_h ?? previewAlignH;
@@ -1000,18 +1111,19 @@ export default function FieldEditor({
                     return (
                       <div
                         key={field.field_name}
-                        className="absolute flex pointer-events-none"
+                        className="absolute flex pointer-events-none box-border"
                         style={{
                           left: `${left}%`,
                           top: `${top}%`,
                           width: `${width}%`,
                           height: `${height}%`,
                           padding: "2px 6px",
-                          fontSize: `${size}px`,
+                          fontSize: `${displaySize}px`,
                           fontStyle: style === "italic" ? "italic" : "normal",
                           fontWeight: style === "bold" ? "bold" : "normal",
                           overflow: "hidden",
                           color,
+                          lineHeight: 1,
                           textShadow:
                             "0 0 1px rgba(255,255,255,0.8), 0 1px 2px rgba(0,0,0,0.1)",
                           justifyContent,
@@ -1021,6 +1133,7 @@ export default function FieldEditor({
                         <span
                           className="truncate block w-full"
                           style={{
+                            lineHeight: 1,
                             textAlign:
                               alignH === "center"
                                 ? "center"

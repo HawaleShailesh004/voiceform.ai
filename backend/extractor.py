@@ -19,6 +19,8 @@ import fitz  # PyMuPDF
 from dotenv import load_dotenv
 load_dotenv()
 
+from prompts import VISION_PROMPT, ACROFORM_LABEL_PROMPT
+
 logger = logging.getLogger(__name__)
 
 
@@ -49,6 +51,7 @@ class FormField:
     acro_field_name: Optional[str] = None
     acro_field_type: Optional[str] = None
     options: Optional[list] = None
+    children: Optional[list] = None  # for radio/checkbox groups: [{ field_name, label, bounding_box }, ...]
 
 
 @dataclass
@@ -68,61 +71,7 @@ class ExtractionResult:
 
 
 # ─────────────────────────────────────────────
-# Vision Prompts
-# ─────────────────────────────────────────────
-
-VISION_PROMPT = """Analyse this form image and extract EVERY fillable field.
-
-Return ONLY valid JSON (no markdown, no preamble):
-{
-  "form_title": "<detected title or 'Unknown Form'>",
-  "fields": [
-    {
-      "field_name": "<unique_snake_case_id>",
-      "field_type": "text|checkbox|date|signature|radio|select|number|email",
-      "semantic_label": "<Human label e.g. First Name>",
-      "question_template": "<Natural question e.g. What is your full name?>",
-      "description": "<what goes here>",
-      "is_required": true|false,
-      "data_type": "name|email|phone|date|address|ssn|text|number",
-      "validation_rules": {}|{"type":"email"}|{"type":"phone"}|{"type":"pincode"},
-      "purpose": "<brief context>",
-      "bounding_box": {"xmin":0,"ymin":0,"xmax":0,"ymax":0}
-    }
-  ]
-}
-
-RULES:
-- Coordinates: 0–1000 scale. (0,0)=top-left, (1000,1000)=bottom-right.
-- bounding_box = FILLABLE AREA only (where user writes), NOT the label.
-- field_name: unique, lowercase, snake_case. Duplicates → append _1, _2.
-- For name fields: use separate first_name, middle_name, last_name if form has separate boxes.
-  If single name box → use full_name.
-- is_required: true if asterisk (*), "required", bold label, or clear convention.
-- Be EXHAUSTIVE — find every single fillable field, even small date boxes."""
-
-ACROFORM_LABEL_PROMPT = """This PDF form has {field_count} fillable fields marked with red numbered circles.
-
-For each numbered field, return ONLY valid JSON array:
-[
-  {{
-    "index": 1,
-    "semantic_label": "Full Name",
-    "field_type": "text|checkbox|radio|select",
-    "question_template": "What is your full name?",
-    "is_required": true,
-    "description": "Legal full name of applicant",
-    "purpose": "Identify the applicant",
-    "data_type": "name",
-    "validation_rules": {{}}
-  }}
-]
-
-Numbers to label: {field_numbers}"""
-
-
-# ─────────────────────────────────────────────
-# Core Extractor
+# Core Extractor (vision prompts live in prompts.py)
 # ─────────────────────────────────────────────
 
 class FormExtractor:
@@ -297,6 +246,22 @@ class FormExtractor:
                 if name in seen: name = f"{name}_{i+1}"
                 seen.add(name)
                 bb = f.get("bounding_box",{})
+                children = None
+                raw_children = f.get("children") or []
+                if raw_children:
+                    children = []
+                    for c in raw_children:
+                        cbb = c.get("bounding_box") or {}
+                        children.append({
+                            "field_name": c.get("field_name", ""),
+                            "label": c.get("label", ""),
+                            "bounding_box": {
+                                "xmin": float(cbb.get("xmin", 0)),
+                                "ymin": float(cbb.get("ymin", 0)),
+                                "xmax": float(cbb.get("xmax", 100)),
+                                "ymax": float(cbb.get("ymax", 100)),
+                            },
+                        })
                 fields.append(FormField(
                     field_name=name,
                     field_type=f.get("field_type","text"),
@@ -313,6 +278,7 @@ class FormExtractor:
                         xmax=float(bb.get("xmax",100)),
                         ymax=float(bb.get("ymax",100)),
                     ),
+                    children=children,
                 ))
             except Exception as e:
                 warnings.append(f"Skipped field {i}: {e}")

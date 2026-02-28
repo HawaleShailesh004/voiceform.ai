@@ -1,0 +1,16 @@
+{
+  "session_id": "2522f151-1bf0-494f-b5d5-17e095b498d3",
+  "form_id": "1ff8297f-2dea-451f-8822-7b5b1ba5dc34",
+  "created_at": "2026-02-28T07:02:49.588193",
+  "status": "active",
+  "collected": {},
+  "chat_history": [
+    {
+      "role": "assistant",
+      "content": "Hey there! I'm delighted to assist you in opening your savings bank account, and I promise to make this process as smooth and simple as possible. Let's get started with the name of the branch where you'd like to open your account."
+    }
+  ],
+  "progress": 0,
+  "lang": "en",
+  "last_asked_field": null
+}

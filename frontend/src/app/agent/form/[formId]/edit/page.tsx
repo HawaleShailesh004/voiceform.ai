@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import {
   ArrowLeft, Save, Share2, Eye, CheckCircle,
   Pencil, Check, AlertCircle, Sparkles, FileImage, Type,
-  Undo2, Redo2,
+  Undo2, Redo2, RefreshCw,
 } from 'lucide-react'
 import AgentNav from '@/components/shared/AgentNav'
 import FieldEditor from '@/components/editor/FieldEditor'
@@ -50,6 +50,7 @@ export default function EditFormPage() {
   const [shareOpen, setShareOpen] = useState(false)
   const [published, setPublished] = useState(false)
   const [saveError, setSaveError] = useState(false)
+  const [reExtracting, setReExtracting] = useState(false)
 
   // ── Live preview (values on same editor image) ─────────
   const [livePreview, setLivePreview] = useState(false)
@@ -60,6 +61,26 @@ export default function EditFormPage() {
   const [previewAlignH, setPreviewAlignH] = useState<'left' | 'center' | 'right'>('left')
   const [previewAlignV, setPreviewAlignV] = useState<'top' | 'middle' | 'bottom'>('top')
   const [previewStyleModalOpen, setPreviewStyleModalOpen] = useState(false)
+
+  const handleReExtract = useCallback(async () => {
+    setReExtracting(true)
+    try {
+      const res = await formAPI.reExtract(formId)
+      setFields(res.fields)
+      if (res.preview_image) setPreview(res.preview_image)
+      setTitle(res.form_title)
+      setUndoStack([])
+      setRedoStack([])
+      savedFields.current = res.fields
+      savedTitle.current = res.form_title
+      setDirty(false)
+      toast.success(`Re-extracted: ${res.field_count} fields`)
+    } catch {
+      toast.error('Re-extraction failed. Original file may be missing.')
+    } finally {
+      setReExtracting(false)
+    }
+  }, [formId])
 
   const titleInputRef = useRef<HTMLInputElement>(null)
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout>>()
@@ -375,6 +396,15 @@ export default function EditFormPage() {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={handleReExtract}
+              disabled={reExtracting}
+              className="btn-ghost btn-sm"
+              title="Re-run AI extraction on the original file to refresh fillable areas"
+            >
+              <RefreshCw size={14} className={reExtracting ? 'animate-spin' : ''} />
+              Re-extract
+            </button>
             <button
               onClick={() => router.push(`/agent/form/${formId}`)}
               className="btn-ghost btn-sm"

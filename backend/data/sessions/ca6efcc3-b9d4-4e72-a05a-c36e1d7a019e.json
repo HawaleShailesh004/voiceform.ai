@@ -1,0 +1,28 @@
+{
+  "session_id": "ca6efcc3-b9d4-4e72-a05a-c36e1d7a019e",
+  "form_id": "12a47bbf-3239-4aef-860c-bbacad9711ce",
+  "created_at": "2026-02-26T15:48:08.867847",
+  "status": "active",
+  "collected": {
+    "name": "Shailesh"
+  },
+  "chat_history": [
+    {
+      "role": "assistant",
+      "content": "Hey there! I'm so glad you're here, and I promise we'll get through this form in no time. To get started, could you please tell me your name?"
+    },
+    {
+      "role": "user",
+      "content": "shailesh"
+    },
+    {
+      "role": "assistant",
+      "content": "Great to meet you, Shailesh! Could you also share your home address with me?"
+    }
+  ],
+  "progress": 7,
+  "lang": "en",
+  "last_asked_field": "name",
+  "updated_at": "2026-02-26T15:48:22.453148",
+  "filled_pdf_path": "data\\filled\\ca6efcc3-b9d4-4e72-a05a-c36e1d7a019e.pdf"
+}

@@ -8,6 +8,12 @@ const api = axios.create({ baseURL: BASE, timeout: 90000 })
 
 export interface BBox { xmin: number; ymin: number; xmax: number; ymax: number }
 
+export interface FieldChild {
+  field_name: string
+  label: string
+  bounding_box: BBox
+}
+
 export interface FormField {
   field_name: string
   field_type: 'text'|'checkbox'|'date'|'signature'|'radio'|'select'|'number'|'email'|'textarea'
@@ -30,6 +36,8 @@ export interface FormField {
   text_align_h?: 'left' | 'center' | 'right'
   /** Optional: vertical alignment inside bbox ('top' | 'middle' | 'bottom'). */
   text_align_v?: 'top' | 'middle' | 'bottom'
+  /** For radio/checkbox groups: each option with its own label and bounding_box. */
+  children?: FieldChild[]
 }
 
 export interface UploadResult {
@@ -82,6 +90,7 @@ export interface Session {
   created_at: string
   lang?: string
   chat_history?: { role: 'user'|'assistant'; content: string }[]
+  whatsapp_phone?: string
 }
 
 export interface ChatResponse {
@@ -175,6 +184,20 @@ export const formAPI = {
   async analytics(formId: string): Promise<FormAnalytics> {
     return (await api.get(`/api/forms/${formId}/analytics`)).data
   },
+
+  /** Re-run extraction on the stored original; returns updated fields and preview. */
+  async reExtract(formId: string): Promise<{
+    form_id: string
+    form_title: string
+    field_count: number
+    fields: FormField[]
+    warnings: string[]
+    preview_image: string | null
+    health_score: HealthScore
+  }> {
+    const res = await api.post(`/api/forms/${formId}/re-extract`)
+    return res.data
+  },
 }
 
 /* ── Session API ─────────────────────────────────────── */
@@ -205,12 +228,38 @@ export const chatAPI = {
 /* ── Fillback API ────────────────────────────────────── */
 
 export const fillAPI = {
-  async fill(sessionId: string): Promise<Blob> {
-    return (await api.post(`/api/sessions/${sessionId}/fill`, {}, { responseType: 'blob' })).data
+  async fill(sessionId: string, partial = false): Promise<Blob> {
+    const url = partial ? `/api/sessions/${sessionId}/fill?partial=true` : `/api/sessions/${sessionId}/fill`
+    return (await api.post(url, {}, { responseType: 'blob' })).data
   },
   download(blob: Blob, name = 'vaarta-filled.pdf') {
     const url = URL.createObjectURL(blob)
     Object.assign(document.createElement('a'), { href: url, download: name }).click()
     URL.revokeObjectURL(url)
+  },
+}
+
+/* ── WhatsApp API ───────────────────────────────────── */
+
+export const whatsappAPI = {
+  async isConfigured(): Promise<boolean> {
+    try {
+      const res = await api.get('/api/whatsapp/status')
+      const configured = res.data.configured ?? false
+      console.log('[Vaarta] GET /api/whatsapp/status →', res.data, '→ configured=', configured)
+      return configured
+    } catch (err) {
+      console.log('[Vaarta] GET /api/whatsapp/status failed', err)
+      return false
+    }
+  },
+  async send(sessionId: string, phone: string, lang = 'en'): Promise<{
+    status: 'sent' | 'scheduled'
+    to?: string
+    message_sid?: string
+    message?: string
+  }> {
+    const res = await api.post(`/api/sessions/${sessionId}/whatsapp`, { phone, lang })
+    return res.data
   },
 }

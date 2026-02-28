@@ -107,7 +107,6 @@ def _fill_acroform(orig_path: str, form_schema: dict, data: dict, output_path: s
 # Image overlay fill
 # ─────────────────────────────────────────────
 
-_PREVIEW_REF_WIDTH = 800.0
 _PAD_X = 6
 _PAD_Y = 2
 
@@ -180,7 +179,7 @@ def _overlay_fill(form_schema: dict, data: dict, output_path: str, partial: bool
             if not val and partial and is_req:
                 draw.rectangle([xmin, ymin, xmax, ymax], fill=_HIGHLIGHT_COLOR, outline=(255, 200, 0), width=1)
                 # Small "required" label
-                hint_font = get_font(max(8, round(9 * iw / _PREVIEW_REF_WIDTH)))
+                hint_font = get_font(max(8, min(12, round(bh * 0.35))))
                 draw.text((xmin + 3, ymin + 2), "required", fill=(180, 120, 0), font=hint_font)
                 continue
 
@@ -201,14 +200,34 @@ def _overlay_fill(form_schema: dict, data: dict, output_path: str, partial: bool
                     except Exception as e:
                         logger.warning(f"Could not embed file for {fname}: {e}")
 
-            fsize   = float(f.get("font_size", 14) if isinstance(f, dict) else 14)
-            scale   = iw / _PREVIEW_REF_WIDTH
-            fsize   = max(8, min(72, round(fsize * scale)))
+            # Font size from box height: fill ~55% of box (works at any image resolution)
+            fsize   = max(8, min(48, round(bh * 0.55)))
             fstyle  = (f.get("font_style") or "normal") if isinstance(f, dict) else "normal"
             field_font = get_font(fsize, fstyle)
             fcolor  = _hex_to_rgb(f.get("font_color", "#0D3D3A") if isinstance(f, dict) else "#0D3D3A")
             align_h = f.get("text_align_h", "left") if isinstance(f, dict) else "left"
             align_v = f.get("text_align_v", "top") if isinstance(f, dict) else "top"
+
+            # Radio/checkbox group: draw mark at selected child's bbox only
+            children = f.get("children") or [] if isinstance(f, dict) else []
+            if children and ftype in ("radio", "checkbox"):
+                val_str = str(val).strip().lower()
+                for child in children:
+                    child_label = (child.get("label") or "").strip().lower()
+                    if child_label and val_str != child_label:
+                        continue
+                    cbb = child.get("bounding_box") or {}
+                    cxmin = cbb.get("xmin", 0) / 1000.0 * iw
+                    cymin = cbb.get("ymin", 0) / 1000.0 * ih
+                    cxmax = cbb.get("xmax", 100) / 1000.0 * iw
+                    cymax = cbb.get("ymax", 100) / 1000.0 * ih
+                    cx = (cxmin + cxmax) / 2
+                    cy = (cymin + cymax) / 2
+                    mark = "●" if ftype == "radio" else "✓"
+                    bb_t = draw.textbbox((0, 0), mark, font=field_font)
+                    tw, th = bb_t[2] - bb_t[0], bb_t[3] - bb_t[1]
+                    draw.text((cx - tw / 2, cy - th / 2), mark, fill=fcolor, font=field_font)
+                continue
 
             if ftype == "checkbox":
                 mark = "✓" if val in (True, "true", "True", "yes", "Yes", "1", 1) else "☐"
