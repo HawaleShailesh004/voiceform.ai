@@ -1,0 +1,518 @@
+{
+  "form_id": "0e8c0422-0961-4336-bb47-d8e4678dfca7",
+  "form_title": "Personal Information Form",
+  "source_type": "scanned_image",
+  "page_count": 1,
+  "page_width": 0,
+  "page_height": 0,
+  "original_filename": "large.png",
+  "uploaded_at": "2026-02-28T10:53:17.243111",
+  "fields": [
+    {
+      "field_name": "name",
+      "field_type": "text",
+      "semantic_label": "Name",
+      "question_template": "What is your full name?",
+      "description": "Please enter your full name.",
+      "is_required": false,
+      "data_type": "name",
+      "validation_rules": {},
+      "purpose": "Personal identification",
+      "bounding_box": {
+        "xmin": 219,
+        "ymin": 145,
+        "xmax": 1000,
+        "ymax": 173
+      },
+      "acro_field_name": null,
+      "options": null,
+      "children": null,
+      "font_size": 14,
+      "font_style": "normal",
+      "text_align_h": "left",
+      "text_align_v": "top"
+    },
+    {
+      "field_name": "address",
+      "field_type": "text",
+      "semantic_label": "Address",
+      "question_template": "What is your current address?",
+      "description": "Please provide your current residential address.",
+      "is_required": false,
+      "data_type": "address",
+      "validation_rules": {},
+      "purpose": "Contact and identification",
+      "bounding_box": {
+        "xmin": 219,
+        "ymin": 197,
+        "xmax": 1000,
+        "ymax": 211
+      },
+      "acro_field_name": null,
+      "options": null,
+      "children": null,
+      "font_size": 14,
+      "font_style": "normal",
+      "text_align_h": "left",
+      "text_align_v": "top"
+    },
+    {
+      "field_name": "mobile_number",
+      "field_type": "text",
+      "semantic_label": "Mobile Number",
+      "question_template": "What is your mobile number?",
+      "description": "Please provide your mobile contact number.",
+      "is_required": false,
+      "data_type": "phone",
+      "validation_rules": {
+        "type": "phone"
+      },
+      "purpose": "Urgent contact",
+      "bounding_box": {
+        "xmin": 277,
+        "ymin": 236,
+        "xmax": 1000,
+        "ymax": 250
+      },
+      "acro_field_name": null,
+      "options": null,
+      "children": null,
+      "font_size": 14,
+      "font_style": "normal",
+      "text_align_h": "left",
+      "text_align_v": "top"
+    },
+    {
+      "field_name": "email_address",
+      "field_type": "text",
+      "semantic_label": "Email Address",
+      "question_template": "What is your email address?",
+      "description": "Please provide your email address for correspondence.",
+      "is_required": false,
+      "data_type": "email",
+      "validation_rules": {
+        "type": "email"
+      },
+      "purpose": "Electronic communication",
+      "bounding_box": {
+        "xmin": 277,
+        "ymin": 274,
+        "xmax": 1000,
+        "ymax": 289
+      },
+      "acro_field_name": null,
+      "options": null,
+      "children": null,
+      "font_size": 14,
+      "font_style": "normal",
+      "text_align_h": "left",
+      "text_align_v": "top"
+    },
+    {
+      "field_name": "next_of_kin_name",
+      "field_type": "text",
+      "semantic_label": "Next of Kin Name",
+      "question_template": "What is your next of kin's full name?",
+      "description": "Please enter the full name of your next of kin.",
+      "is_required": false,
+      "data_type": "name",
+      "validation_rules": {},
+      "purpose": "Emergency contact",
+      "bounding_box": {
+        "xmin": 219,
+        "ymin": 353,
+        "xmax": 1000,
+        "ymax": 367
+      },
+      "acro_field_name": null,
+      "options": null,
+      "children": null,
+      "font_size": 14,
+      "font_style": "normal",
+      "text_align_h": "left",
+      "text_align_v": "top"
+    },
+    {
+      "field_name": "next_of_kin_mobile_number",
+      "field_type": "text",
+      "semantic_label": "Next of Kin Mobile Number",
+      "question_template": "What is your next of kin's mobile number?",
+      "description": "Please provide the mobile number of your next of kin.",
+      "is_required": false,
+      "data_type": "phone",
+      "validation_rules": {
+        "type": "phone"
+      },
+      "purpose": "Emergency contact",
+      "bounding_box": {
+        "xmin": 277,
+        "ymin": 391,
+        "xmax": 1000,
+        "ymax": 405
+      },
+      "acro_field_name": null,
+      "options": null,
+      "children": null,
+      "font_size": 14,
+      "font_style": "normal",
+      "text_align_h": "left",
+      "text_align_v": "top"
+    },
+    {
+      "field_name": "next_of_kin_email_address",
+      "field_type": "text",
+      "semantic_label": "Next of Kin Email Address",
+      "question_template": "What is your next of kin's email address?",
+      "description": "Please provide the email address of your next of kin.",
+      "is_required": false,
+      "data_type": "email",
+      "validation_rules": {
+        "type": "email"
+      },
+      "purpose": "Emergency contact",
+      "bounding_box": {
+        "xmin": 277,
+        "ymin": 429,
+        "xmax": 1000,
+        "ymax": 443
+      },
+      "acro_field_name": null,
+      "options": null,
+      "children": null,
+      "font_size": 14,
+      "font_style": "normal",
+      "text_align_h": "left",
+      "text_align_v": "top"
+    },
+    {
+      "field_name": "next_of_kin_relationship",
+      "field_type": "text",
+      "semantic_label": "Next of Kin Relationship",
+      "question_template": "What is your relationship to your next of kin?",
+      "description": "Please describe your relationship with your next of kin (e.g., spouse, parent, sibling).",
+      "is_required": false,
+      "data_type": "text",
+      "validation_rules": {},
+      "purpose": "Context for emergency contact",
+      "bounding_box": {
+        "xmin": 252,
+        "ymin": 468,
+        "xmax": 1000,
+        "ymax": 482
+      },
+      "acro_field_name": null,
+      "options": null,
+      "children": null,
+      "font_size": 14,
+      "font_style": "normal",
+      "text_align_h": "left",
+      "text_align_v": "top"
+    },
+    {
+      "field_name": "bank_building_society",
+      "field_type": "text",
+      "semantic_label": "Bank/Building Society",
+      "question_template": "What is the name of your bank or building society?",
+      "description": "Please provide the name of your bank or building society.",
+      "is_required": false,
+      "data_type": "text",
+      "validation_rules": {},
+      "purpose": "Financial information for payments",
+      "bounding_box": {
+        "xmin": 365,
+        "ymin": 546,
+        "xmax": 1000,
+        "ymax": 560
+      },
+      "acro_field_name": null,
+      "options": null,
+      "children": null,
+      "font_size": 14,
+      "font_style": "normal",
+      "text_align_h": "left",
+      "text_align_v": "top"
+    },
+    {
+      "field_name": "branch",
+      "field_type": "text",
+      "semantic_label": "Branch",
+      "question_template": "What is your bank's branch name or location?",
+      "description": "Please provide the branch name or location of your bank/building society.",
+      "is_required": false,
+      "data_type": "text",
+      "validation_rules": {},
+      "purpose": "Financial information for payments",
+      "bounding_box": {
+        "xmin": 227,
+        "ymin": 584,
+        "xmax": 1000,
+        "ymax": 598
+      },
+      "acro_field_name": null,
+      "options": null,
+      "children": null,
+      "font_size": 14,
+      "font_style": "normal",
+      "text_align_h": "left",
+      "text_align_v": "top"
+    },
+    {
+      "field_name": "sort_code",
+      "field_type": "text",
+      "semantic_label": "Sort Code",
+      "question_template": "What is your bank account sort code?",
+      "description": "Please provide the sort code for your bank account.",
+      "is_required": false,
+      "data_type": "number",
+      "validation_rules": {
+        "type": "numeric",
+        "length": 6
+      },
+      "purpose": "Financial information for payments",
+      "bounding_box": {
+        "xmin": 239,
+        "ymin": 622,
+        "xmax": 1000,
+        "ymax": 637
+      },
+      "acro_field_name": null,
+      "options": null,
+      "children": null,
+      "font_size": 14,
+      "font_style": "normal",
+      "text_align_h": "left",
+      "text_align_v": "top"
+    },
+    {
+      "field_name": "account_number",
+      "field_type": "text",
+      "semantic_label": "Account Number",
+      "question_template": "What is your bank account number?",
+      "description": "Please provide your bank account number.",
+      "is_required": false,
+      "data_type": "number",
+      "validation_rules": {
+        "type": "numeric"
+      },
+      "purpose": "Financial information for payments",
+      "bounding_box": {
+        "xmin": 302,
+        "ymin": 661,
+        "xmax": 1000,
+        "ymax": 675
+      },
+      "acro_field_name": null,
+      "options": null,
+      "children": null,
+      "font_size": 14,
+      "font_style": "normal",
+      "text_align_h": "left",
+      "text_align_v": "top"
+    },
+    {
+      "field_name": "driving_licence_submitted",
+      "field_type": "checkbox",
+      "semantic_label": "Driving Licence",
+      "question_template": "Have you submitted your Driving Licence?",
+      "description": "Tick if you are providing your Driving Licence.",
+      "is_required": false,
+      "data_type": "boolean",
+      "validation_rules": {},
+      "purpose": "Document verification",
+      "bounding_box": {
+        "xmin": 302,
+        "ymin": 702,
+        "xmax": 334,
+        "ymax": 721
+      },
+      "acro_field_name": null,
+      "options": null,
+      "children": null,
+      "font_size": 14,
+      "font_style": "normal",
+      "text_align_h": "left",
+      "text_align_v": "top"
+    },
+    {
+      "field_name": "passport_birth_certificate_work_permit_submitted",
+      "field_type": "checkbox",
+      "semantic_label": "Passport, Birth Certificate or Work Permit",
+      "question_template": "Have you submitted your Passport, Birth Certificate or Work Permit?",
+      "description": "Tick if you are providing your Passport, Birth Certificate or Work Permit.",
+      "is_required": false,
+      "data_type": "boolean",
+      "validation_rules": {},
+      "purpose": "Document verification",
+      "bounding_box": {
+        "xmin": 592,
+        "ymin": 702,
+        "xmax": 623,
+        "ymax": 721
+      },
+      "acro_field_name": null,
+      "options": null,
+      "children": null,
+      "font_size": 14,
+      "font_style": "normal",
+      "text_align_h": "left",
+      "text_align_v": "top"
+    },
+    {
+      "field_name": "p45_or_p46_submitted",
+      "field_type": "checkbox",
+      "semantic_label": "P45 or P46",
+      "question_template": "Have you submitted your P45 or P46?",
+      "description": "Tick if you are providing your P45 or P46.",
+      "is_required": false,
+      "data_type": "boolean",
+      "validation_rules": {},
+      "purpose": "Tax information",
+      "bounding_box": {
+        "xmin": 227,
+        "ymin": 735,
+        "xmax": 258,
+        "ymax": 754
+      },
+      "acro_field_name": null,
+      "options": null,
+      "children": null,
+      "font_size": 14,
+      "font_style": "normal",
+      "text_align_h": "left",
+      "text_align_v": "top"
+    }
+  ],
+  "warnings": [],
+  "raw_image_b64": "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",
+  "sample_values": {},
+  "health_score": {
+    "overall_score": 90,
+    "grade": "A",
+    "grade_label": "Excellent — users will find this easy",
+    "estimated_minutes": 0.0,
+    "total_fields": 15,
+    "required_fields": 0,
+    "score_breakdown": {
+      "field_clarity": 28,
+      "required_ratio": 20,
+      "field_type_variety": 7,
+      "confusion_risk": 20,
+      "completion_time": 15
+    },
+    "issues": [],
+    "suggestions": [],
+    "positives": [
+      "Field labels are clear and well-described",
+      "Good balance of required vs optional fields",
+      "Short form (~0.0 min) — users will complete it quickly",
+      "No confusing government/technical fields detected"
+    ],
+    "field_scores": [
+      {
+        "field_name": "name",
+        "semantic_label": "Name",
+        "clarity": 2,
+        "is_confusing": false,
+        "is_required": false
+      },
+      {
+        "field_name": "address",
+        "semantic_label": "Address",
+        "clarity": 2,
+        "is_confusing": false,
+        "is_required": false
+      },
+      {
+        "field_name": "mobile_number",
+        "semantic_label": "Mobile Number",
+        "clarity": 3,
+        "is_confusing": false,
+        "is_required": false
+      },
+      {
+        "field_name": "email_address",
+        "semantic_label": "Email Address",
+        "clarity": 3,
+        "is_confusing": false,
+        "is_required": false
+      },
+      {
+        "field_name": "next_of_kin_name",
+        "semantic_label": "Next of Kin Name",
+        "clarity": 3,
+        "is_confusing": false,
+        "is_required": false
+      },
+      {
+        "field_name": "next_of_kin_mobile_number",
+        "semantic_label": "Next of Kin Mobile Number",
+        "clarity": 3,
+        "is_confusing": false,
+        "is_required": false
+      },
+      {
+        "field_name": "next_of_kin_email_address",
+        "semantic_label": "Next of Kin Email Address",
+        "clarity": 3,
+        "is_confusing": false,
+        "is_required": false
+      },
+      {
+        "field_name": "next_of_kin_relationship",
+        "semantic_label": "Next of Kin Relationship",
+        "clarity": 3,
+        "is_confusing": false,
+        "is_required": false
+      },
+      {
+        "field_name": "bank_building_society",
+        "semantic_label": "Bank/Building Society",
+        "clarity": 3,
+        "is_confusing": false,
+        "is_required": false
+      },
+      {
+        "field_name": "branch",
+        "semantic_label": "Branch",
+        "clarity": 2,
+        "is_confusing": false,
+        "is_required": false
+      },
+      {
+        "field_name": "sort_code",
+        "semantic_label": "Sort Code",
+        "clarity": 3,
+        "is_confusing": false,
+        "is_required": false
+      },
+      {
+        "field_name": "account_number",
+        "semantic_label": "Account Number",
+        "clarity": 3,
+        "is_confusing": false,
+        "is_required": false
+      },
+      {
+        "field_name": "driving_licence_submitted",
+        "semantic_label": "Driving Licence",
+        "clarity": 3,
+        "is_confusing": false,
+        "is_required": false
+      },
+      {
+        "field_name": "passport_birth_certificate_work_permit_submitted",
+        "semantic_label": "Passport, Birth Certificate or Work Permit",
+        "clarity": 3,
+        "is_confusing": false,
+        "is_required": false
+      },
+      {
+        "field_name": "p45_or_p46_submitted",
+        "semantic_label": "P45 or P46",
+        "clarity": 3,
+        "is_confusing": false,
+        "is_required": false
+      }
+    ]
+  }
+}
